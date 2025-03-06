@@ -14,7 +14,7 @@ This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for 
 """
 
 import tkinter as tk
-from treamill_app import TreadmillApp
+from treadmill_app import TreadmillApp
 
 def create_main_window():
     root = tk.Tk()
