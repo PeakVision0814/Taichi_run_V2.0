@@ -25,8 +25,8 @@ class HeartRateMonitor:
         self.stabilized = False
 
     def _validate_age(self):
-        if not isinstance(self.age, int) or self.age <= 0:
-            raise ValueError("Age must be a positive integer.")
+        if not isinstance(self.age, int) or self.age <= 0 or self.age > 120:
+            raise ValueError("年龄必须是1-120的整数。")
 
     def calculate_max_heart_rate(self):
         return 220 - self.age

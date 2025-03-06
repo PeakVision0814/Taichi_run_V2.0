@@ -127,19 +127,11 @@ class TreadmillSimulator:
             ):
         return current_time - last_time
 
-    def _calculate_distance(
-            self,
-            elapsed_time
-            ):
-        return self.current_speed * self._convert_hours_to_seconds(
-            elapsed_time
-            )
+    def _calculate_distance(self,elapsed_time):
+        return self.current_speed * self._convert_hours_to_seconds(elapsed_time)
 
-    def _convert_hours_to_seconds(
-            self,
-            elapsed_time
-            ):
-        return (elapsed_time / 3600) * 1000
+    def _convert_hours_to_seconds(self, elapsed_time):
+        return (self.current_speed * 1000) * (elapsed_time / 3600)
 
     def get_elapsed_time(self):
         return self._calculate_elapsed_time_since_start() if self.start_time else 0

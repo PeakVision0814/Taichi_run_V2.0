@@ -1,3 +1,17 @@
+"""
+Treamill APP
+==================
+This module provides a GUI interface.
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; 
+Date Created: 2025-03-06
+Last Modified: 2025-03-06
+Version: 2.0.0
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
 import tkinter as tk
 from tkinter import ttk
 from treadmill_controller import TreadmillController
@@ -12,21 +26,11 @@ class TreadmillApp:
         self.target_type_combo = self._create_target_type_selection()
         self.target_entry = self._create_target_entry()
         self.start_button, self.stop_button = self._create_control_buttons()
-        self.heart_rate_label = self._create_status_label("当前心率：",
-                                                          "0 bpm",
-                                                          5)
-        self.speed_label = self._create_status_label("当前速率：",
-                                                     "0 km/h",
-                                                     6)
-        self.time_label = self._create_status_label("运动时间：",
-                                                    "0 秒",
-                                                    7)
-        self.distance_label = self._create_status_label("运动距离：",
-                                                        "0 m",
-                                                        8)
-        self.lap_label = self._create_status_label("当前圈程：",
-                                                   "0",
-                                                   9)
+        self.heart_rate_label = self._create_status_label("当前心率：","0 bpm",5)
+        self.speed_label = self._create_status_label("当前速率：","0 km/h",6)
+        self.time_label = self._create_status_label("运动时间：","0 秒",7)
+        self.distance_label = self._create_status_label("运动距离：","0 m",8)
+        self.lap_label = self._create_status_label("当前圈程：","0",9)
         self.controller = None
         self.goal_reached_dialog = None
 
@@ -37,29 +41,17 @@ class TreadmillApp:
         self._set_root_protocol("WM_DELETE_WINDOW",
                                 self.on_closing)
 
-    def _set_root_title(
-            self,
-            title
-            ):
-        self.root.title(
-            title
-            )
+    def _set_root_title(self,title):
+        self.root.title(title)
 
-    def _set_root_geometry(self,
-                           geometry):
+    def _set_root_geometry(self,geometry):
         self.root.geometry(geometry)
 
-    def _set_root_resizable(self,
-                            width,
-                            height):
-        self.root.resizable(width,
-                            height)
+    def _set_root_resizable(self,width,height):
+        self.root.resizable(width,height)
 
-    def _set_root_protocol(self,
-                           protocol,
-                           command):
-        self.root.protocol(protocol,
-                           command)
+    def _set_root_protocol(self,protocol,command):
+        self.root.protocol(protocol,command)
 
     def _create_main_frame(self):
         main_frame = tk.Frame(self.root)
@@ -363,17 +355,14 @@ class TreadmillApp:
         level = self._get_level()
         return age, level
 
-    def _get_age(
-            self
-            ):
+    def _get_age(self):
         try:
-            return int(
-                self.age_entry.get()
-                )
+            age = int(self.age_entry.get())
+            if 1 <= age <= 120:
+                return age
+            raise ValueError
         except ValueError:
-            self._show_warning(
-                "请正确填写年龄"
-                )
+            self._show_warning("请输入有效的年龄（1-120）")
             return None
 
     def _get_level(
@@ -580,36 +569,29 @@ class TreadmillApp:
         self.goal_reached_dialog.destroy()
         self.stop_workout()
 
-    def update_status(
-            self,
-            message
-            ):
-        if "心率" in message:
-            self._update_heart_rate_label(
-                message
-                )
-        elif "速度" in message:
-            speed, distance, time = self._parse_status_message(
-                message
-                )
-            self._update_status_labels(
-                speed,
-                distance,
-                time
-                )
+    # def update_status(self,message):
+    #     if "心率" in message:
+    #         self._update_heart_rate_label(
+    #             message
+    #             )
+    #     elif "速度" in message:
+    #         speed, distance, time = self._parse_status_message(message)
+    #         self._update_status_labels(speed,distance,time)
 
-    def _update_heart_rate_label(
-            self,
-            message
-            ):
-        self.heart_rate_label.config(
-            text=message.split(
-                ": "
-                )
-                [
-                    1
-                    ]
-                    )
+    # def _update_heart_rate_label(self,message):
+    #     self.heart_rate_label.config(text=message.split(": ")[1])
+    def update_status(self, message):
+        if "心率" in message:
+            # 直接解析并更新心率标签
+            self.heart_rate_label.config(text=message.split(": ")[1])
+        else:
+            # 直接拆分消息并更新多个状态标签
+            parts = message.split(", ")
+            if len(parts) >= 3:
+                speed_part, distance_part, duration_part = parts[:3]
+                self.speed_label.config(text=speed_part.split(": ")[1])
+                self.distance_label.config(text=distance_part.split(": ")[1])
+                self.time_label.config(text=duration_part.split(": ")[1])    
 
     def _parse_status_message(
             self,
