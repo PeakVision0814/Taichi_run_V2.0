@@ -113,7 +113,7 @@ class TreadmillController:
             while self.treadmill.get_distance_covered() - start_distance < circle_distance and self.running:
                 heart_rate = self.heart_rate_monitor.get_current_heart_rate()
                 current_speed = self.treadmill.get_current_speed()
-
+#
                 if self.update_callback:
                     self.update_callback(f"当前心率: {heart_rate} bpm")
 
