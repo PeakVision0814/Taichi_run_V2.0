@@ -33,11 +33,7 @@ class TreadmillSimulator:
         return speed
 
     def _check_speed_type(self,speed):
-        if not isinstance(speed,(
-                int,
-                float
-                )
-                ):
+        if not isinstance(speed,(int,float)):
             raise TypeError("Speed must be an integer or a float.")
 
     def _check_speed_value(self,speed):
