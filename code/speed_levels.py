@@ -1,3 +1,17 @@
+"""
+Speed Levels Simulation
+=======================
+This module provides a class to simulate speed levels based on elapsed time and predefined levels.
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; 
+Date Created: 2025-03-06
+Last Modified: 2025-03-06
+Version: 1.0.0
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
 SPEED_LEVELS = {
     2: [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 6.5, 6.0, 5.5, 5.0, 4.5, 4.0, 3.5],
     3: [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.3, 6.6, 6.9, 7.2, 7.5, 7.8, 8.1, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.5],
