@@ -16,7 +16,7 @@ import threading
 import time
 from treadmill_simulator import TreadmillSimulator
 from heart_rate_monitor import HeartRateMonitor
-from speed_levels import SPEED_LEVELS  # 导入 SPEED_LEVELS
+from speed_levels import SPEED_LEVELS
 
 class TreadmillController:
     def __init__(
