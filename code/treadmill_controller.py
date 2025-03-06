@@ -117,13 +117,16 @@ class TreadmillController:
                 if self.update_callback:
                     self.update_callback(f"当前心率: {heart_rate} bpm")
 
-                elapsed_time = self.elapsed_time_before_pause + (time.time() - self.start_time)
+                # 计算已运行时间（强制转换为整数秒）
+                current_elapsed = int(time.time() - self.start_time)  # 取整
+                elapsed_time = self.elapsed_time_before_pause + current_elapsed
                 distance_covered = self.treadmill.get_distance_covered()
 
+                # 检查是否达到目标
                 if ((self.target_distance is not None and 
                     self.treadmill.get_distance_covered() - initial_distance >= self.target_distance) or
-                        (self.max_time is not None and 
-                        elapsed_time >= self.max_time)):
+                    (self.max_time is not None and 
+                    elapsed_time >= self.max_time)):
                     self.pause()
                     if self.goal_reached_callback:
                         self.goal_reached_callback()
@@ -132,10 +135,13 @@ class TreadmillController:
                 if self.target_heart_rate is not None and heart_rate >= self.target_heart_rate:
                     self.decreasing = True
 
+                # 更新状态（时间显示强制为整数）
                 if self.update_callback:
                     self.update_callback(
-                        f"当前速度: {current_speed:.1f} km/h, 已跑距离: {distance_covered:.2f} 米, 运行时间: {elapsed_time:.2f} 秒"
-                        )
+                        f"当前速度: {current_speed:.1f} km/h, "
+                        f"已跑距离: {distance_covered:.2f} 米, "
+                        f"运行时间: {elapsed_time} 秒"  # 直接显示整数
+                    )
 
                 if heart_rate >= self.heart_rate_monitor.max_heart_rate * 0.8:
                     self.decreasing = True
@@ -149,6 +155,7 @@ class TreadmillController:
             with self.lock:
                 if not self.start_decrease:
                     self.speed_index += 1
+
 
 
 if __name__ == "__main__":

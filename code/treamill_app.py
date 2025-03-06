@@ -352,18 +352,21 @@ class TreadmillApp:
 
     def _create_stop_button(self,button_frame):
         stop_button = tk.Button(button_frame,
-                                text="停止运动",
-                                command=self.on_goal_reached_dialog_stop
-                                )
-        stop_button.pack(side=tk.LEFT,
-                         padx=10
-                         )
+            text="停止运动",
+            command=self.on_goal_reached_dialog_stop
+            )
+        stop_button.pack(
+            side=tk.LEFT,
+            padx=10
+            )
 
     def on_goal_reached_dialog_continue(self):
         self.goal_reached_dialog.destroy()
         if self.controller:
             self._reset_controller_goals()
-            self.controller.resume()
+            self.controller.resume(
+
+            )
 
     def _reset_controller_goals(self):
         self.controller.target_distance = None
@@ -374,26 +377,20 @@ class TreadmillApp:
         self.goal_reached_dialog.destroy()
         self.stop_workout()
 
-    def update_status(self, message):
+    def update_status(self,message):
         if "心率" in message:
-            # 直接解析并更新心率标签
-            self.heart_rate_label.config(text=message.split(": ")[1])
-        else:
-            # 直接拆分消息并更新多个状态标签
-            parts = message.split(", ")
-            if len(parts) >= 3:
-                speed_part, distance_part, duration_part = parts[:3]
-                self.speed_label.config(text=speed_part.split(": ")[1])
-                self.distance_label.config(text=distance_part.split(": ")[1])
-                self.time_label.config(text=duration_part.split(": ")[1])    
+            self._update_heart_rate_label(message)
+        elif "速度" in message:
+            speed, distance, time = self._parse_status_message(message)
+            self._update_status_labels(speed,distance,time)
+
+    def _update_heart_rate_label(self,message):
+        self.heart_rate_label.config(text=message.split(": ")[1])
 
     def _parse_status_message(self,message):
         return message.split(", ")
 
-    def _update_status_labels(self,
-                              speed,
-                              distance,
-                              time):
+    def _update_status_labels(self,speed,distance,time):
         self._update_speed_label(speed)
         self._update_distance_label(distance)
         self._update_time_label(time)
@@ -402,26 +399,21 @@ class TreadmillApp:
     def _update_speed_label(self,speed):
         self.speed_label.config(text=speed.split(": ")[1])
 
-    def _update_distance_label(self,
-                               distance
-                               ):
+    def _update_distance_label(self,distance):
         self.distance_label.config(text=distance.split(": ")[1])
 
-    def _update_time_label(self,
-                           time):
+    def _update_time_label(self,time):
         self.time_label.config(text=time.split(": ")[1])
 
     def _update_lap_label(self,distance):
-        distance_covered = float(
-            distance.split(": ")[1].split(" ")[0]
-            )
+        distance_covered = float(distance.split(": ")[1].split(" ")[0])
         laps = int(distance_covered // 200) + 1
         self.lap_label.config(text=str(laps))
 
     def _show_warning(self,message):
         warning_window = self._create_warning_window("警告","200x100")
-        self._create_warning_label(warning_window,
-                                   message)
+        self._create_warning_label(warning_window,message
+            )
         self._create_warning_button(warning_window,"确定")
 
     def _create_warning_window(self,title,geometry):
@@ -430,21 +422,18 @@ class TreadmillApp:
         warning_window.geometry(geometry)
         return warning_window
 
-    def _create_warning_label(self,
-                              window,
-                              message
-                              ):
-        tk.Label(window,
-                 text=message).pack(pady=20)
+    def _create_warning_label(self,window,message):
+        tk.Label(window,text=message).pack(pady=20)
 
-    def _create_warning_button(self,
-                               window,
-                               text):
-        tk.Button(window,
-                  text=text,
-                  command=window.destroy
-                  ).pack()
+    def _create_warning_button(self,window,text):
+        tk.Button(
+            window,
+            text=text,
+            command=window.destroy
+            ).pack()
 
-    def on_closing(self):
+    def on_closing(
+            self
+            ):
         self._stop_controller()
         self.root.destroy()
