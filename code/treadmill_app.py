@@ -31,7 +31,7 @@ class TreadmillApp:
         self.speed_label = self._create_status_label("当前速率：","0 km/h",6)
         self.time_label = self._create_status_label("运动时间：","0 秒",7)
         self.distance_label = self._create_status_label("运动距离：","0 m",8)
-        self.lap_label = self._create_status_label("当前圈程：","0",9)
+        self.current_lap_label = self._create_status_label("当前圈程：","0",9)
         self.controller = None
         self.goal_reached_dialog = None
 
@@ -394,7 +394,7 @@ class TreadmillApp:
         self._update_speed_label(speed)
         self._update_distance_label(distance)
         self._update_time_label(time)
-        self._update_lap_label(distance)
+        self._update_current_lap_label(distance)
 
     def _update_speed_label(self,speed):
         self.speed_label.config(text=speed.split(": ")[1])
@@ -405,10 +405,10 @@ class TreadmillApp:
     def _update_time_label(self,time):
         self.time_label.config(text=time.split(": ")[1])
 
-    def _update_lap_label(self,distance):
+    def _update_current_lap_label(self,distance):
         distance_covered = float(distance.split(": ")[1].split(" ")[0])
         laps = int(distance_covered // 200) + 1
-        self.lap_label.config(text=str(laps))
+        self.current_lap_label.config(text=str(laps))
 
     def _show_warning(self,message):
         warning_window = self._create_warning_window("警告","200x100")
