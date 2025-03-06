@@ -59,14 +59,9 @@ class TreadmillApp:
         return main_frame
 
     def _create_level_selection(self):
-        self._create_label(self.main_frame,
-                           "选择等级：",
-                           0,
-                           0)
+        self._create_label(self.main_frame,"选择等级：",0,0)
         level_var = tk.StringVar()
-        level_combo = self._create_combobox(self.main_frame,
-                                            level_var,
-                                            [str(i) for i in range(2, 11)],
+        level_combo = self._create_combobox(self.main_frame,level_var,[str(i) for i in range(2, 11)],
                                             0,
                                             1)
         level_combo.bind("<<ComboboxSelected>>",
@@ -138,10 +133,7 @@ class TreadmillApp:
         return target_type_combo
 
     def _create_target_entry(self):
-        self.target_label = self._create_label(self.main_frame,
-                                               "目标：",
-                                               3,
-                                               0)
+        self.target_label = self._create_label(self.main_frame,"目标：",3,0)
         target_entry = tk.Entry(self.main_frame)
         target_entry.grid(row=3,
                           column=1,
@@ -163,13 +155,9 @@ class TreadmillApp:
             state=tk.NORMAL
                      )
 
-    def _create_control_buttons(self
-                                ):
+    def _create_control_buttons(self):
         button_frame = tk.Frame(self.main_frame)
-        button_frame.grid(row=4,
-                          column=0,
-                          columnspan=2,
-                          pady=10)
+        button_frame.grid(row=4,column=0,columnspan=2,pady=10)
         start_button = self._create_button(button_frame, 
                                            "开始运动", 
                                            self.start_workout, 
@@ -179,6 +167,14 @@ class TreadmillApp:
                                           self.stop_workout, 
                                           side=tk.LEFT, 
                                           state=tk.DISABLED)
+        
+        # emergency_stop = tk.Button(button_frame,
+        #                             text="紧急停止",
+        #                             command=self.emergency_stop,
+        #                             bg="red",
+        #                             fg="white")
+        # emergency_stop.pack(side=tk.LEFT, padx=5)
+
         return start_button, stop_button
 
     def _create_button(
@@ -201,6 +197,12 @@ class TreadmillApp:
                     padx=padx
                     )
         return button
+
+    # def emergency_stop(self):
+    #     if self.controller:
+    #         self.controller.stop()  # 调用控制器的停止方法
+    #         self._show_warning("紧急停止已触发！")
+    #         self._update_button_states(start_running=False)  # 更新按钮状态
 
     def _create_status_label(self,
                              text,
@@ -314,28 +316,16 @@ class TreadmillApp:
             self._set_target_label_text(
                 "目标："
                 )
-            self._disable_entry(
-                self.target_entry
-                )
+            self._disable_entry(self.target_entry)
         elif target_type == "心率（bpm）":
-            self._set_target_label_text(
-                "目标："
-                )
-            self._enable_entry(
-                self.target_entry
-                )
+            self._set_target_label_text("目标：")
+            self._enable_entry(self.target_entry)
 
-    def _set_target_label_text(
-            self,
-            text
+    def _set_target_label_text(self,text
             ):
-        self.target_label.config(
-            text=text
-            )
+        self.target_label.config(text=text)
 
-    def start_workout(
-            self
-            ):
+    def start_workout(self):
         age, level = self._get_user_inputs()
         if age is None or level is None:
             return
@@ -348,9 +338,7 @@ class TreadmillApp:
                                     )
         self._update_button_states(start_running=True)
 
-    def _get_user_inputs(
-            self
-            ):
+    def _get_user_inputs(self):
         age = self._get_age()
         level = self._get_level()
         return age, level
@@ -365,17 +353,11 @@ class TreadmillApp:
             self._show_warning("请输入有效的年龄（1-120）")
             return None
 
-    def _get_level(
-            self
-            ):
+    def _get_level(self):
         try:
-            return int(
-                self.level_combo.get()
-                )
+            return int(self.level_combo.get())
         except ValueError:
-            self._show_warning(
-                "请正确填写等级"
-                )
+            self._show_warning("请正确填写等级")
             return None
 
     def _determine_targets(self):
@@ -387,10 +369,7 @@ class TreadmillApp:
                 )
             return None, None, None
         return self._assign_targets(
-            target_type,int(
-                target_value
-                )
-                )
+            target_type,int(target_value))
 
     def _assign_targets(
             self,
@@ -422,14 +401,10 @@ class TreadmillApp:
             goal_reached_callback=self.show_goal_reached_dialog)
         self.controller.start()
 
-    def stop_workout(
-            self
-            ):
+    def stop_workout(self):
         self._stop_controller()
         self._destroy_goal_reached_dialog()
-        self._update_button_states(
-            start_running=False
-            )
+        self._update_button_states(start_running=False)
 
     def _stop_controller(
             self
@@ -480,22 +455,11 @@ class TreadmillApp:
             state=tk.NORMAL
             )
 
-    def show_goal_reached_dialog(
-            self
-            ):
-        self.goal_reached_dialog = tk.Toplevel(
-            self.root
-            )
-        self.goal_reached_dialog.title(
-            "目标达成"
-            )
-        self.goal_reached_dialog.geometry(
-            "300x150"
-            )
-        tk.Label(
-            self.goal_reached_dialog,
-            text="目标达成，运动已结束！"
-            ).pack(pady=20)
+    def show_goal_reached_dialog(self):
+        self.goal_reached_dialog = tk.Toplevel(self.root)
+        self.goal_reached_dialog.title("目标达成")
+        self.goal_reached_dialog.geometry("300x150")
+        tk.Label(self.goal_reached_dialog,text="目标达成，运动已结束！").pack(pady=20)
         self._create_goal_dialog_buttons()
 
     def _create_goal_dialog_buttons(

@@ -39,41 +39,29 @@ class TreadmillController:
         self.decreasing = False
         self.start_decrease = False
 
-    def start(
-            self
-            ):
+    def start(self):
         self.running = True
         self.treadmill.start()
         self.start_time = time.time()
         self.control_thread.start()
         if self.update_callback:
-            self.update_callback(
-                "跑步机已启动。"
-                )
+            self.update_callback("跑步机已启动。")
 
-    def stop(
-            self
-            ):
+    def stop(self):
         self.running = False
         self.treadmill.stop()
         if self.update_callback:
-            self.update_callback(
-                "跑步机已停止。"
-                )
+            self.update_callback("跑步机已停止。")
         if self.goal_reached_callback:
             self.goal_reached_callback()
 
-    def pause(
-            self
-            ):
+    def pause(self):
         self.running = False
         self.paused = True
         self.treadmill.stop()
         self.elapsed_time_before_pause += time.time() - self.start_time
         if self.update_callback:
-            self.update_callback(
-                "跑步机已暂停。"
-                )
+            self.update_callback("跑步机已暂停。")
 
     def resume(
             self
@@ -177,37 +165,16 @@ class TreadmillController:
 
 
 if __name__ == "__main__":
-    def update_status(
-            message
-            ):
-        print(
-            message
-            )
+    def update_status(message):
+        print(message)
 
-    age = int
-    (
-        input
-        (
-            "请输入您的年龄: "
-            )
-            )
-    level = int(
-        input
-        (
-            "请输入初始运动等级（2-10）: "
-            )
-            )
+    age = int(input("请输入您的年龄: "))
+    level = int(input("请输入初始运动等级（2-10）: "))
 
-    target_type = input
-    (
-        "请选择目标类型（1: 距离, 2: 时间, 3: 无目标, 4: 心率）: "
-        )
+    target_type = input("请选择目标类型（1: 距离, 2: 时间, 3: 无目标, 4: 心率）: ")
     if target_type == '1':
         target_distance = int
-        (
-            input
-            ("请输入目标跑步距离（米）: ")
-            )
+        (input("请输入目标跑步距离（米）: "))
         max_time = None
         target_heart_rate = None
     elif target_type == '2':
