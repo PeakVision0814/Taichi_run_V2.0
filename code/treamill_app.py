@@ -1,5 +1,5 @@
 """
-Treamill APP
+Treadmill APP
 ==================
 This module provides a GUI interface.
 Author: Gaopeng Huang; Hui Guo
@@ -167,14 +167,6 @@ class TreadmillApp:
                                           self.stop_workout, 
                                           side=tk.LEFT, 
                                           state=tk.DISABLED)
-        
-        # emergency_stop = tk.Button(button_frame,
-        #                             text="紧急停止",
-        #                             command=self.emergency_stop,
-        #                             bg="red",
-        #                             fg="white")
-        # emergency_stop.pack(side=tk.LEFT, padx=5)
-
         return start_button, stop_button
 
     def _create_button(
@@ -197,12 +189,6 @@ class TreadmillApp:
                     padx=padx
                     )
         return button
-
-    # def emergency_stop(self):
-    #     if self.controller:
-    #         self.controller.stop()  # 调用控制器的停止方法
-    #         self._show_warning("紧急停止已触发！")
-    #         self._update_button_states(start_running=False)  # 更新按钮状态
 
     def _create_status_label(self,
                              text,

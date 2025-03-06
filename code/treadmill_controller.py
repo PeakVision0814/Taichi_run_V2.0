@@ -1,3 +1,17 @@
+"""
+Treadmill Control System
+========================
+This module provides a treadmill control system with heart rate monitoring and adaptive speed adjustment.
+Author: PeakVision Development Team
+Email: support@peakvision.com
+Date Created: 2025-03-06
+Last Modified: 2025-03-06
+Version: 3.1.0
+Copyright (c) 2025 PeakVision Technologies
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
 import threading
 import time
 from treadmill_simulator import TreadmillSimulator
@@ -13,19 +27,14 @@ class TreadmillController:
             max_time=None,
             target_heart_rate=None, 
             update_callback=None, 
-            goal_reached_callback=None
-            ):
+            goal_reached_callback=None):
         self.treadmill = TreadmillSimulator()
-        self.heart_rate_monitor = HeartRateMonitor(
-            age
-            )
+        self.heart_rate_monitor = HeartRateMonitor(age)
         self.level = level
         self.speed_index = 0
         self.decrease_speed_count = 0
         self.lock = threading.Lock()
-        self.control_thread = threading.Thread(
-            target=self._control
-            )
+        self.control_thread = threading.Thread(target=self._control)
         self.control_thread.daemon = True
         self.target_distance = target_distance
         self.max_time = max_time
@@ -63,30 +72,19 @@ class TreadmillController:
         if self.update_callback:
             self.update_callback("跑步机已暂停。")
 
-    def resume(
-            self
-            ):
+    def resume(self):
         self.running = True
         self.paused = False
         self.treadmill.start()
         self.start_time = time.time()
-        self.control_thread = threading.Thread(
-            target=self._control
-            )
+        self.control_thread = threading.Thread(target=self._control)
         self.control_thread.daemon = True
         self.control_thread.start()
 
-    def set_speed(
-            self,
-            speed
-            ):
-        self.treadmill.set_speed(
-            speed
-            )
+    def set_speed(self,speed):
+        self.treadmill.set_speed(speed)
 
-    def _control(
-            self
-            ):
+    def _control(self):
         circle_distance = 200
         initial_distance = self.treadmill.get_distance_covered()
         while self.running:
@@ -103,12 +101,7 @@ class TreadmillController:
                     else:
                         self.stop()
                         return
-                elif self.speed_index < len(
-                    SPEED_LEVELS
-                    [
-                        self.level
-                        ]
-                        ):
+                elif self.speed_index < len(SPEED_LEVELS[self.level]):
                     speed = SPEED_LEVELS[self.level][self.speed_index]
                     self.set_speed(speed)
                 else:
@@ -121,22 +114,15 @@ class TreadmillController:
                 current_speed = self.treadmill.get_current_speed()
 
                 if self.update_callback:
-                    self.update_callback(
-                        f"当前心率: {heart_rate} bpm"
-                        )
+                    self.update_callback(f"当前心率: {heart_rate} bpm")
 
-                elapsed_time = self.elapsed_time_before_pause + (
-                    time.time() - self.start_time
-                    )
+                elapsed_time = self.elapsed_time_before_pause + (time.time() - self.start_time)
                 distance_covered = self.treadmill.get_distance_covered()
 
-                if (
-                    (
-                        self.target_distance is not None and 
+                if ((self.target_distance is not None and 
                     self.treadmill.get_distance_covered() - initial_distance >= self.target_distance) or
                         (self.max_time is not None and 
-                        elapsed_time >= self.max_time)
-                        ):
+                        elapsed_time >= self.max_time)):
                     self.pause()
                     if self.goal_reached_callback:
                         self.goal_reached_callback()
