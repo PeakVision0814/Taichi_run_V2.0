@@ -1,4 +1,5 @@
 """
+treadmill_simulator.py
 Treadmill Simulator Module
 ==========================
 This module provides a treadmill simulation with speed control and distance tracking capabilities.

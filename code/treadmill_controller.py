@@ -1,4 +1,5 @@
 """
+treadmill_controller.py
 Treadmill Control System
 ========================
 This module provides a treadmill control system with heart rate monitoring and adaptive speed adjustment.
