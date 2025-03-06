@@ -3,10 +3,10 @@ Heart Rate Monitor
 ==================
 This module provides a class to simulate and monitor heart rate based on elapsed time and age.
 Author: Gaopeng Huang; Hui Guo
-Email: perished_hgp@163.com
-Date Created: YYYY-MM-DD
-Last Modified: YYYY-MM-DD
-Version: 2.0.0
+Email: perished_hgp@163.com; 
+Date Created: 2025-03-06
+Last Modified: 2025-03-06
+Version: 1.0.0
 Copyright (c) 2025 PeakVision
 All rights reserved.
 This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
