@@ -3,7 +3,7 @@ Heart Rate Monitor
 ==================
 This module provides a class to simulate and monitor heart rate based on elapsed time and age.
 Author: Gaopeng Huang; Hui Guo
-Email: perished_hgp@163.com; 
+Email: perished_hgp@163.com; gh1848026781@163.com
 Date Created: 2025-03-06
 Last Modified: 2025-03-06
 Version: 1.0.0

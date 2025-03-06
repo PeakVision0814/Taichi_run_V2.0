@@ -3,7 +3,7 @@ Run the application.
 ==================
 This module is the entry point for the launch page.
 Author: Gaopeng Huang; Hui Guo
-Email: perished_hgp@163.com; 
+Email: perished_hgp@163.com; gh1848026781@163.com
 Date Created: 2025-03-06
 Last Modified: 2025-03-06
 Version: 2.0.0

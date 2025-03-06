@@ -3,7 +3,7 @@ Treadmill APP
 ==================
 This module provides a GUI interface.
 Author: Gaopeng Huang; Hui Guo
-Email: perished_hgp@163.com; 
+Email: perished_hgp@163.com; gh1848026781@163.com
 Date Created: 2025-03-06
 Last Modified: 2025-03-06
 Version: 2.0.0
@@ -76,9 +76,7 @@ class TreadmillApp:
                       sticky='e',
                       padx=10,
                       pady=10):
-        tk.Label(parent,
-                 text=text,
-                 anchor=sticky).grid(row=row,
+        tk.Label(parent,text=text,anchor=sticky).grid(row=row,
                                      column=column,
                                      padx=padx,
                                      pady=pady,
