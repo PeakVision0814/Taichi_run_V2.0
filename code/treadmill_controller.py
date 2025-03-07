@@ -20,15 +20,14 @@ from heart_rate_monitor import HeartRateMonitor
 from speed_levels import SPEED_LEVELS
 
 class TreadmillController:
-    def __init__(
-            self,
-            age,
-            level,
-            target_distance=None,
-            max_time=None,
-            target_heart_rate=None, 
-            update_callback=None, 
-            goal_reached_callback=None):
+    def __init__(self,
+                 age,
+                 level,
+                 target_distance=None,
+                 max_time=None,
+                 target_heart_rate=None,
+                 update_callback=None,
+                 goal_reached_callback=None):
         self.treadmill = TreadmillSimulator()
         self.heart_rate_monitor = HeartRateMonitor(age)
         self.level = level
@@ -48,6 +47,7 @@ class TreadmillController:
         self.elapsed_time_before_pause = 0
         self.decreasing = False
         self.start_decrease = False
+
 
     def start(self):
         self.running = True
