@@ -69,32 +69,15 @@ class TreadmillApp:
                          self.on_level_selected)
         return level_combo
 
-    def _create_label(self,
-                      parent,
-                      text,
-                      row,
-                      column,
-                      sticky='e',
-                      padx=10,
-                      pady=10):
+    def _create_label(self,parent,text,row,column,sticky='e',padx=10,pady=10):
         tk.Label(parent,text=text,anchor=sticky).grid(row=row,
-                                     column=column,
-                                     padx=padx,
-                                     pady=pady,
-                                     sticky=sticky)
+                                                      column=column,
+                                                      padx=padx,
+                                                      pady=pady,
+                                                      sticky=sticky)
 
-    def _create_combobox(self,
-                         parent,
-                         textvariable,
-                         values,
-                         row,
-                         column,
-                         sticky='w',
-                         padx=10,
-                         pady=10):
-        combo = ttk.Combobox(parent,
-                             textvariable=textvariable,
-                             values=values)
+    def _create_combobox(self,parent,textvariable,values,row,column,sticky='w',padx=10,pady=10):
+        combo = ttk.Combobox(parent,textvariable=textvariable,values=values)
         combo.grid(row=row,
                    column=column,
                    padx=padx,
@@ -103,16 +86,9 @@ class TreadmillApp:
         return combo
 
     def _create_age_entry(self):
-        self._create_label(self.main_frame,
-                           "年龄：",
-                           1,
-                           0)
+        self._create_label(self.main_frame,"年龄：",1,0)
         age_entry = tk.Entry(self.main_frame)
-        age_entry.grid(row=1,
-                       column=1,
-                       padx=10,
-                       pady=10,
-                       sticky='w')
+        age_entry.grid(row=1,column=1,padx=10,pady=10,sticky='w')
         return age_entry
 
     def _create_target_type_selection(self):
@@ -125,8 +101,7 @@ class TreadmillApp:
                                                                                      "心率（bpm）"], 
                                                                                      2, 
                                                                                      1)
-        target_type_combo.bind("<<ComboboxSelected>>",
-                               self.update_target_entry)
+        target_type_combo.bind("<<ComboboxSelected>>", self.update_target_entry)
         return target_type_combo
 
     def _create_target_entry(self):
@@ -234,12 +209,7 @@ class TreadmillApp:
         if age is None or level is None:
             return
         target_distance,max_time, target_heart_rate = self._determine_targets()
-        self._initialize_controller(age,
-                                    level,
-                                    target_distance,
-                                    max_time,
-                                    target_heart_rate
-                                    )
+        self._initialize_controller(age,level,target_distance,max_time,target_heart_rate)
         self._update_button_states(start_running=True)
 
     def _get_user_inputs(self):
@@ -284,21 +254,14 @@ class TreadmillApp:
             return None, None, target_value
         return None, None, None
 
-    def _initialize_controller(
-            self,
-            age, 
-            level, 
-            target_distance, 
-            max_time, 
-            target_heart_rate):
-        self.controller = TreadmillController(
-            age, 
-            level, 
-            target_distance, 
-            max_time, 
-            target_heart_rate,
-            update_callback=self.update_status,
-            goal_reached_callback=self.show_goal_reached_dialog)
+    def _initialize_controller(self,age,level,target_distance,max_time,target_heart_rate):
+        self.controller = TreadmillController(age,
+                                              level,
+                                              target_distance,
+                                              max_time,
+                                              target_heart_rate,
+                                              update_callback=self.update_status,
+                                              goal_reached_callback=self.show_goal_reached_dialog)
         self.controller.start()
 
     def stop_workout(self):
@@ -345,28 +308,21 @@ class TreadmillApp:
         
     def _create_continue_button(self,button_frame):
         continue_button = tk.Button(button_frame,
-            text="继续运动",
-            command=self.on_goal_reached_dialog_continue
-            )
+                                    text="继续运动",
+                                    command=self.on_goal_reached_dialog_continue)
         continue_button.pack(side=tk.LEFT,padx=10)
 
     def _create_stop_button(self,button_frame):
         stop_button = tk.Button(button_frame,
-            text="停止运动",
-            command=self.on_goal_reached_dialog_stop
-            )
-        stop_button.pack(
-            side=tk.LEFT,
-            padx=10
-            )
+                                text="停止运动",
+                                command=self.on_goal_reached_dialog_stop)
+        stop_button.pack(side=tk.LEFT,padx=10)
 
     def on_goal_reached_dialog_continue(self):
         self.goal_reached_dialog.destroy()
         if self.controller:
             self._reset_controller_goals()
-            self.controller.resume(
-
-            )
+            self.controller.resume()
 
     def _reset_controller_goals(self):
         self.controller.target_distance = None
@@ -412,8 +368,7 @@ class TreadmillApp:
 
     def _show_warning(self,message):
         warning_window = self._create_warning_window("警告","200x100")
-        self._create_warning_label(warning_window,message
-            )
+        self._create_warning_label(warning_window,message)
         self._create_warning_button(warning_window,"确定")
 
     def _create_warning_window(self,title,geometry):
@@ -426,14 +381,8 @@ class TreadmillApp:
         tk.Label(window,text=message).pack(pady=20)
 
     def _create_warning_button(self,window,text):
-        tk.Button(
-            window,
-            text=text,
-            command=window.destroy
-            ).pack()
+        tk.Button(window,text=text,command=window.destroy).pack()
 
-    def on_closing(
-            self
-            ):
+    def on_closing(self):
         self._stop_controller()
         self.root.destroy()
