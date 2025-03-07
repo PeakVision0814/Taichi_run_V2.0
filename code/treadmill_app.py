@@ -162,17 +162,15 @@ class TreadmillApp:
             self.update_target_entry(None)
 
     def _get_default_targets(self):
-        return {
-            "2": 4000,
-            "3": 4200,
-            "4": 4600,
-            "5": 5000,
-            "6": 5200,
-            "7": 5200,
-            "8": 5400,
-            "9": 5400,
-            "10": 5400
-        }
+        return {"2": 4000,
+                "3": 4200,
+                "4": 4600,
+                "5": 5000,
+                "6": 5200,
+                "7": 5200,
+                "8": 5400,
+                "9": 5400,
+                "10": 5400}
 
     def _update_target_input(self,target_type,value):
         self.target_type_combo.set(target_type)
