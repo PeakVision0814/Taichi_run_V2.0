@@ -154,7 +154,6 @@ class TreadmillController:
                     self.speed_index += 1
 
 
-
 if __name__ == "__main__":
     def update_status(message):
         print(message)
