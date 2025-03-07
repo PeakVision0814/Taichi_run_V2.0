@@ -62,9 +62,7 @@ class TreadmillApp:
     def _create_level_selection(self):
         self._create_label(self.main_frame,"选择等级：",0,0)
         level_var = tk.StringVar()
-        level_combo = self._create_combobox(self.main_frame,level_var,[str(i) for i in range(2, 11)],
-                                            0,
-                                            1)
+        level_combo = self._create_combobox(self.main_frame,level_var,[str(i) for i in range(2, 11)],0,1)
         level_combo.bind("<<ComboboxSelected>>",
                          self.on_level_selected)
         return level_combo
