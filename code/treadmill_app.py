@@ -26,18 +26,27 @@ class TreadmillApp:
         self.target_type_combo = self._create_target_type_selection()
         self.target_entry = self._create_target_entry()
         self.start_button, self.stop_button = self._create_control_buttons()
-        self.heart_rate_label = self._create_status_label("当前心率：","0 bpm",5)
-        self.average_heart_rate_label = self._create_status_label("平均心率：","0 bpm", 6) #  平均心率标签放在当前心率标签下方，调整row参数
-        self.speed_label = self._create_status_label("当前速率：","0 km/h",7)
-        self.time_label = self._create_status_label("运动时间：","0 秒",8)
-        self.distance_label = self._create_status_label("运动距离：","0 m",9)
-        self.current_lap_label = self._create_status_label("当前圈程：","0",10)
+        # 双列布局创建状态标签
+        row_start = 5
+        col1 = 0
+        col2 = 1
+        self.heart_rate_label = self._create_status_label("当前心率：","0 bpm", row_start, col1)
+        self.average_heart_rate_label = self._create_status_label("平均心率：","0 bpm", row_start, col2)
+        self.speed_label = self._create_status_label("当前速率：","0 km/h", row_start+1, col1)
+        self.time_label = self._create_status_label("运动时间：","0 秒", row_start+1, col2)
+        self.distance_label = self._create_status_label("运动距离：","0 m", row_start+2, col1)
+        self.current_lap_label = self._create_status_label("当前圈程：","0", row_start+2, col2)
         self.controller = None
         self.goal_reached_dialog = None
+        self._configure_grid_columns() # 调用新的方法配置列属性
+
+    def _configure_grid_columns(self):
+        self.main_frame.grid_columnconfigure(1, weight=0, minsize=80) #  配置第2列 (索引为1)，用于显示状态值
+        self.main_frame.grid_columnconfigure(3, weight=0, minsize=80) #  配置第4列 (索引为3)，用于显示状态值 (第二列)
 
     def _configure_root(self):
         self._set_root_title("智能太极跑系统")
-        self._set_root_geometry("350x550")
+        self._set_root_geometry("400x400")
         self._set_root_resizable(False, False)
         self._set_root_protocol("WM_DELETE_WINDOW",
                                 self.on_closing)
@@ -140,11 +149,11 @@ class TreadmillApp:
         button.pack(side=side,padx=padx)
         return button
 
-    def _create_status_label(self, text, initial_value, row):
-        self._create_label(self.main_frame, text, row, 0)
+    def _create_status_label(self, text, initial_value, row, column):
+        self._create_label(self.main_frame, text, row, column)
         status_label = tk.Label(self.main_frame, text=initial_value)
         status_label.grid(row=row,
-                          column=1,
+                          column=column + 1,
                           padx=10,
                           pady=10,
                           sticky='w')
