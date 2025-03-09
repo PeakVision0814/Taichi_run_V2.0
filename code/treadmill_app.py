@@ -205,7 +205,11 @@ class TreadmillApp:
         if age is None or level is None:
             return
         target_distance,max_time, target_heart_rate = self._determine_targets()
-        self._initialize_controller(age,level,target_distance,max_time,target_heart_rate)
+        self._initialize_controller(age,
+                                    level,
+                                    target_distance,
+                                    max_time,
+                                    target_heart_rate)
         self._update_button_states(start_running=True)
 
     def _get_user_inputs(self):
