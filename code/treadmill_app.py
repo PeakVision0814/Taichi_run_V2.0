@@ -77,11 +77,13 @@ class TreadmillApp:
         return level_combo
 
     def _create_label(self,parent,text,row,column,sticky='e',padx=10,pady=10):
-        tk.Label(parent,text=text,anchor=sticky).grid(row=row,
-                                                      column=column,
-                                                      padx=padx,
-                                                      pady=pady,
-                                                      sticky=sticky)
+        label = tk.Label(parent,text=text,anchor=sticky) # 创建 tk.Label 对象并赋值给变量 label
+        label.grid(row=row,       # 使用 label 对象进行 grid 布局
+                column=column,
+                padx=padx,
+                pady=pady,
+                sticky=sticky)
+        return label              # 返回 label 对象
 
     def _create_combobox(self,parent,textvariable,values,row,column,sticky='w',padx=10,pady=10):
         combo = ttk.Combobox(parent,textvariable=textvariable,values=values)
