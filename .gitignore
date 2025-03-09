@@ -2,3 +2,5 @@
 *.pyc
 # Ignore __pycache__ directories
 __pycache__/
+# Ignore some folders
+不同步文件夹/
