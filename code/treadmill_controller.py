@@ -16,7 +16,6 @@ This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for 
 import threading
 import time
 from treadmill_simulator import TreadmillSimulator
-# from heart_rate_monitor import HeartRateMonitor
 from heart_rate_collector import HeartRateCollector
 from speed_levels import SPEED_LEVELS
 
@@ -30,7 +29,6 @@ class TreadmillController:
                  update_callback=None,
                  goal_reached_callback=None):
         self.treadmill = TreadmillSimulator()
-        # self.heart_rate_monitor = HeartRateMonitor(age)
         self.heart_rate_collector = HeartRateCollector(age) # 使用 HeartRateCollector
         self.level = level
         self.speed_index = 0
@@ -113,7 +111,6 @@ class TreadmillController:
 
             start_distance = self.treadmill.get_distance_covered()
             while self.treadmill.get_distance_covered() - start_distance < circle_distance and self.running:
-                # heart_rate = self.heart_rate_monitor.get_current_heart_rate()
                 heart_rate = self.heart_rate_collector.get_heart_rate() # 从 HeartRateCollector 获取心率
                 current_speed = self.treadmill.get_current_speed()
 
@@ -143,7 +140,6 @@ class TreadmillController:
                         f"运行时间: {elapsed_time} 秒" 
                     )
 
-                # if heart_rate >= self.heart_rate_monitor.max_heart_rate * 0.8:
                 if heart_rate >= self.heart_rate_collector.heart_rate_monitor.max_heart_rate * 0.8:
                     self.decreasing = True
 
