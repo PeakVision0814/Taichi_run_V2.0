@@ -22,13 +22,14 @@ class TreadmillController:
     def __init__(self,
                  age,
                  level,
+                 circle_distance=200, # 添加 circle_distance 参数，并设置默认值 200
                  target_distance=None,
                  max_time=None,
                  target_heart_rate=None,
                  update_callback=None,
                  goal_reached_callback=None):
         self.treadmill = TreadmillSimulator()
-        self.heart_rate_collector = HeartRateCollector(age) # 使用 HeartRateCollector
+        self.heart_rate_collector = HeartRateCollector(age)
         self.level = level
         self.speed_index = 0
         self.decrease_speed_count = 0
@@ -46,6 +47,7 @@ class TreadmillController:
         self.elapsed_time_before_pause = 0
         self.decreasing = False
         self.start_decrease = False
+        self.circle_distance = circle_distance # 保存 circle_distance 值
 
 
     def start(self):
@@ -85,7 +87,7 @@ class TreadmillController:
         self.treadmill.set_speed(speed)
 
     def _control(self):
-        circle_distance = 200
+        # circle_distance = 200
         initial_distance = self.treadmill.get_distance_covered()
         while self.running:
             with self.lock:
@@ -109,7 +111,7 @@ class TreadmillController:
                     return
 
             start_distance = self.treadmill.get_distance_covered()
-            while self.treadmill.get_distance_covered() - start_distance < circle_distance and self.running:
+            while self.treadmill.get_distance_covered() - start_distance < self.circle_distance and self.running:
                 heart_rate = self.heart_rate_collector.get_heart_rate() # 从 HeartRateCollector 获取心率
                 current_speed = self.treadmill.get_current_speed()
 
