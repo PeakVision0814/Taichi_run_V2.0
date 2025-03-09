@@ -28,16 +28,17 @@ class TreadmillApp:
         self.target_entry = self._create_target_entry()
         self.start_button, self.stop_button = self._create_control_buttons()
         self.heart_rate_label = self._create_status_label("当前心率：","0 bpm",5)
-        self.speed_label = self._create_status_label("当前速率：","0 km/h",6)
-        self.time_label = self._create_status_label("运动时间：","0 秒",7)
-        self.distance_label = self._create_status_label("运动距离：","0 m",8)
-        self.current_lap_label = self._create_status_label("当前圈程：","0",9)
+        self.average_heart_rate_label = self._create_status_label("平均心率：","0 bpm", 6) #  平均心率标签放在当前心率标签下方，调整row参数
+        self.speed_label = self._create_status_label("当前速率：","0 km/h",7)
+        self.time_label = self._create_status_label("运动时间：","0 秒",8)
+        self.distance_label = self._create_status_label("运动距离：","0 m",9)
+        self.current_lap_label = self._create_status_label("当前圈程：","0",10)
         self.controller = None
         self.goal_reached_dialog = None
 
     def _configure_root(self):
         self._set_root_title("智能太极跑系统")
-        self._set_root_geometry("350x450")
+        self._set_root_geometry("350x550")
         self._set_root_resizable(False, False)
         self._set_root_protocol("WM_DELETE_WINDOW",
                                 self.on_closing)
@@ -140,15 +141,14 @@ class TreadmillApp:
         button.pack(side=side,padx=padx)
         return button
 
-    def _create_status_label(self,text,initial_value,row):
-        self._create_label(self.main_frame,text,row,0)
-        status_label = tk.Label(self.main_frame,text=initial_value)
+    def _create_status_label(self, text, initial_value, row):
+        self._create_label(self.main_frame, text, row, 0)
+        status_label = tk.Label(self.main_frame, text=initial_value)
         status_label.grid(row=row,
                           column=1,
                           padx=10,
                           pady=10,
-                          sticky='w'
-        )
+                          sticky='w')
         return status_label
 
     def on_level_selected(self,event):
@@ -204,12 +204,13 @@ class TreadmillApp:
         age, level = self._get_user_inputs()
         if age is None or level is None:
             return
-        target_distance,max_time, target_heart_rate = self._determine_targets()
+        target_distance, max_time, target_heart_rate = self._determine_targets()
         self._initialize_controller(age,
                                     level,
                                     target_distance,
                                     max_time,
                                     target_heart_rate)
+        self.controller.heart_rate_collector.reset_heart_rate_samples() # 在运动开始时重置心率样本
         self._update_button_states(start_running=True)
 
     def _get_user_inputs(self):
@@ -336,12 +337,21 @@ class TreadmillApp:
     def update_status(self,message):
         if "心率" in message:
             self._update_heart_rate_label(message)
+            self._update_average_heart_rate_label() #  更新平均心率标签
         elif "速度" in message:
             speed, distance, time = self._parse_status_message(message)
             self._update_status_labels(speed,distance,time)
 
     def _update_heart_rate_label(self,message):
         self.heart_rate_label.config(text=message.split(": ")[1])
+
+    def _update_average_heart_rate_label(self):
+        """
+        更新平均心率标签。 从 HeartRateCollector 获取平均心率并显示。
+        """
+        average_heart_rate = self.controller.heart_rate_collector.get_average_heart_rate()
+        self.average_heart_rate_label.config(text=f"{average_heart_rate:.2f} bpm") #  保留两位小数
+
 
     def _parse_status_message(self,message):
         return message.split(", ")
