@@ -27,7 +27,6 @@ class TreadmillApp:
         self.target_type_combo = self._create_target_type_selection()
         self.target_entry = self._create_target_entry()
         self.start_button, self.stop_button = self._create_control_buttons()
-        # 双列布局创建状态标签
         row_start = 6
         col1 = 0
         col2 = 1
@@ -39,15 +38,15 @@ class TreadmillApp:
         self.current_lap_label = self._create_status_label("当前圈程：","0", row_start+2, col2)
         self.controller = None
         self.goal_reached_dialog = None
-        self._configure_grid_columns() # 调用新的方法配置列属性
+        self._configure_grid_columns() 
 
     def _configure_grid_columns(self):
-        self.main_frame.grid_columnconfigure(1, weight=0, minsize=80) #  配置第2列 (索引为1)，用于显示状态值
-        self.main_frame.grid_columnconfigure(3, weight=0, minsize=80) #  配置第4列 (索引为3)，用于显示状态值 (第二列)
+        self.main_frame.grid_columnconfigure(1, weight=0, minsize=80) 
+        self.main_frame.grid_columnconfigure(3, weight=0, minsize=80)
 
     def _configure_root(self):
         self._set_root_title("智能太极跑系统")
-        self._set_root_geometry("400x400")
+        self._set_root_geometry("400x500")
         self._set_root_resizable(False, False)
         self._set_root_protocol("WM_DELETE_WINDOW",
                                 self.on_closing)
@@ -78,13 +77,13 @@ class TreadmillApp:
         return level_combo
 
     def _create_label(self,parent,text,row,column,sticky='e',padx=10,pady=10):
-        label = tk.Label(parent,text=text,anchor=sticky) # 创建 tk.Label 对象并赋值给变量 label
-        label.grid(row=row,       # 使用 label 对象进行 grid 布局
-                column=column,
-                padx=padx,
-                pady=pady,
-                sticky=sticky)
-        return label              # 返回 label 对象
+        label = tk.Label(parent,text=text,anchor=sticky)
+        label.grid(row=row,
+                   column=column,
+                   padx=padx,
+                   pady=pady,
+                   sticky=sticky)
+        return label
 
     def _create_combobox(self,parent,textvariable,values,row,column,sticky='w',padx=10,pady=10):
         combo = ttk.Combobox(parent,textvariable=textvariable,values=values)
@@ -100,17 +99,17 @@ class TreadmillApp:
         age_entry = tk.Entry(self.main_frame)
         age_entry.grid(row=1,column=1,padx=10,pady=10,sticky='w')
         return age_entry
-    
+
     def _create_circle_distance_entry(self):
-        self._create_label(self.main_frame,"圈程距离（米）：",2,0) # 注意行号调整为 2
+        self._create_label(self.main_frame,"圈程距离（米）：",2,0)
         circle_distance_entry = tk.Entry(self.main_frame)
-        circle_distance_entry.grid(row=2, column=1, padx=10, pady=10, sticky='w') # 注意行号调整为 2
-        circle_distance_entry.insert(0, "200") # 默认值设置为 200 米
+        circle_distance_entry.grid(row=2, column=1, padx=10, pady=10, sticky='w')
+        circle_distance_entry.insert(0, "200")
         return circle_distance_entry
 
     def _create_target_type_selection(self):
         self._create_label(self.main_frame,
-                           "选择目标类型：",3,0)
+                                         "选择目标类型：",3,0)
         target_type_var = tk.StringVar(value="无目标")
         target_type_combo = self._create_combobox(self.main_frame, target_type_var, ["无目标", 
                                                                                      "距离（米）", 
@@ -132,8 +131,7 @@ class TreadmillApp:
         self._disable_entry(target_entry)
         return target_entry
 
-    def _disable_entry(self,
-                       entry):
+    def _disable_entry(self, entry):
         entry.config(state=tk.DISABLED)
 
     def _enable_entry(self,entry):
@@ -221,15 +219,15 @@ class TreadmillApp:
 
     def start_workout(self):
         age, level = self._get_user_inputs()
-        circle_distance = self._get_circle_distance() # 获取 circle_distance
-        if circle_distance is None: # 如果获取圈程距离失败，则直接返回
+        circle_distance = self._get_circle_distance() 
+        if circle_distance is None:
             return
         if age is None or level is None:
             return
         target_distance, max_time, target_heart_rate = self._determine_targets()
         self._initialize_controller(age,
                                     level,
-                                    circle_distance, #  添加 circle_distance 参数
+                                    circle_distance, 
                                     target_distance,
                                     max_time,
                                     target_heart_rate)
@@ -262,7 +260,7 @@ class TreadmillApp:
     def _get_circle_distance(self):
         try:
             circle_distance = int(self.circle_distance_entry.get())
-            if circle_distance > 0: # 确保圈程距离是正数
+            if circle_distance > 0:
                 return circle_distance
             raise ValueError
         except ValueError:
@@ -289,19 +287,10 @@ class TreadmillApp:
             return None, None, target_value
         return None, None, None
 
-    # def _initialize_controller(self,age,level,target_distance,max_time,target_heart_rate):
-    #     self.controller = TreadmillController(age,
-    #                                           level,
-    #                                           target_distance,
-    #                                           max_time,
-    #                                           target_heart_rate,
-    #                                           update_callback=self.update_status,
-    #                                           goal_reached_callback=self.show_goal_reached_dialog)
-    #     self.controller.start()
     def _initialize_controller(self, age, level, circle_distance, target_distance, max_time, target_heart_rate): # 添加 circle_distance 参数
         self.controller = TreadmillController(age,
                                                 level,
-                                                circle_distance, # 传递 circle_distance 参数
+                                                circle_distance,
                                                 target_distance,
                                                 max_time,
                                                 target_heart_rate,
@@ -381,7 +370,7 @@ class TreadmillApp:
     def update_status(self,message):
         if "心率" in message:
             self._update_heart_rate_label(message)
-            self._update_average_heart_rate_label() #  更新平均心率标签
+            self._update_average_heart_rate_label() 
         elif "速度" in message:
             speed, distance, time = self._parse_status_message(message)
             self._update_status_labels(speed,distance,time)
@@ -390,11 +379,8 @@ class TreadmillApp:
         self.heart_rate_label.config(text=message.split(": ")[1])
 
     def _update_average_heart_rate_label(self):
-        """
-        更新平均心率标签。 从 HeartRateCollector 获取平均心率并显示。
-        """
         average_heart_rate = self.controller.heart_rate_collector.get_average_heart_rate()
-        self.average_heart_rate_label.config(text=f"{average_heart_rate:.2f} bpm") #  保留两位小数
+        self.average_heart_rate_label.config(text=f"{average_heart_rate:.2f} bpm") 
 
 
     def _parse_status_message(self,message):
