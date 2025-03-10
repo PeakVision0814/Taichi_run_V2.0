@@ -6,7 +6,7 @@ This module provides a GUI interface.
 Author: Gaopeng Huang; Hui Guo
 Email: perished_hgp@163.com; gh1848026781@163.com
 Date Created: 2025-03-06
-Last Modified: 2025-03-09
+Last Modified: 2025-03-10
 Copyright (c) 2025 PeakVision
 All rights reserved.
 This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
@@ -32,10 +32,12 @@ class TreadmillApp:
         col2 = 1
         self.heart_rate_label = self._create_status_label("当前心率：","0 bpm", row_start, col1)
         self.average_heart_rate_label = self._create_status_label("平均心率：","0 bpm", row_start, col2)
-        self.speed_label = self._create_status_label("当前速率：","0 km/h", row_start+1, col1)
-        self.time_label = self._create_status_label("运动时间：","0 秒", row_start+1, col2)
-        self.distance_label = self._create_status_label("运动距离：","0 m", row_start+2, col1)
-        self.current_lap_label = self._create_status_label("当前圈程：","0", row_start+2, col2)
+        self.current_lap_average_heart_rate_label = self._create_status_label("本圈平均心率：", "0 bpm", row_start + 1, col1)
+        self.previous_lap_average_heart_rate_label = self._create_status_label("上圈平均心率：", "0 bpm", row_start + 1, col2)
+        self.speed_label = self._create_status_label("当前速率：","0 km/h", row_start+2, col1)
+        self.time_label = self._create_status_label("运动时间：","0 秒", row_start+2, col2)
+        self.distance_label = self._create_status_label("运动距离：","0 m", row_start+3, col1)
+        self.current_lap_label = self._create_status_label("当前圈程：","0", row_start+3, col2)
         self.controller = None
         self.goal_reached_dialog = None
         self._configure_grid_columns() 
@@ -287,7 +289,7 @@ class TreadmillApp:
             return None, None, target_value
         return None, None, None
 
-    def _initialize_controller(self, age, level, circle_distance, target_distance, max_time, target_heart_rate): # 添加 circle_distance 参数
+    def _initialize_controller(self, age, level, circle_distance, target_distance, max_time, target_heart_rate): 
         self.controller = TreadmillController(age,
                                                 level,
                                                 circle_distance,
@@ -371,6 +373,8 @@ class TreadmillApp:
         if "心率" in message:
             self._update_heart_rate_label(message)
             self._update_average_heart_rate_label() 
+            self._update_current_lap_average_heart_rate_label(message)
+            self._update_previous_lap_average_heart_rate_label(message)
         elif "速度" in message:
             speed, distance, time = self._parse_status_message(message)
             self._update_status_labels(speed,distance,time)
@@ -382,6 +386,21 @@ class TreadmillApp:
         average_heart_rate = self.controller.heart_rate_collector.get_average_heart_rate()
         self.average_heart_rate_label.config(text=f"{average_heart_rate:.2f} bpm") 
 
+    def _update_current_lap_average_heart_rate_label(self, message):
+        if "本圈平均心率" in message:
+            parts = message.split(", ")
+            for part in parts:
+                if "本圈平均心率" in part:
+                    self.current_lap_average_heart_rate_label.config(text=part.split(": ")[1])
+                    return
+
+    def _update_previous_lap_average_heart_rate_label(self, message):
+        if "上圈平均心率" in message:
+            parts = message.split(", ")
+            for part in parts:
+                if "上圈平均心率" in part:
+                    self.previous_lap_average_heart_rate_label.config(text=part.split(": ")[1])
+                    return
 
     def _parse_status_message(self,message):
         return message.split(", ")

@@ -110,12 +110,27 @@ class TreadmillController:
                     return
 
             start_distance = self.treadmill.get_distance_covered()
+
+            self.heart_rate_collector.start_new_lap()
+
             while self.treadmill.get_distance_covered() - start_distance < self.circle_distance and self.running:
                 heart_rate = self.heart_rate_collector.get_heart_rate()
                 current_speed = self.treadmill.get_current_speed()
+                current_lap_avg_hr = self.heart_rate_collector.get_current_lap_average_heart_rate()
+                previous_lap_avg_hr = self.heart_rate_collector.get_previous_lap_average_heart_rate()
+
+                self.update_callback(
+                     f"当前心率: {heart_rate} bpm, "
+                     f"本圈平均心率: {current_lap_avg_hr:.2f} bpm, " 
+                     f"上圈平均心率: {previous_lap_avg_hr:.2f} bpm, "
+                     f"当前速度: {current_speed:.1f} km/h, "
+                     f"已跑距离: {self.treadmill.get_distance_covered():.2f} 米, "
+                     f"运行时间: {int(time.time() - self.start_time)} 秒"
+                 )
 
                 if self.update_callback:
                     self.update_callback(f"当前心率: {heart_rate} bpm")
+
 
                 current_elapsed = int(time.time() - self.start_time) 
                 elapsed_time = self.elapsed_time_before_pause + current_elapsed

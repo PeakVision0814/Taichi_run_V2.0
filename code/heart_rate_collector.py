@@ -17,11 +17,14 @@ from heart_rate_monitor import HeartRateMonitor
 class HeartRateCollector:
     def __init__(self, age):
         self.heart_rate_monitor = HeartRateMonitor(age)  
-        self.heart_rate_samples = [] 
+        self.heart_rate_samples = []
+        self.current_lap_heart_rate_samples = [] 
+        self.previous_lap_average_heart_rate = 0.0  
 
     def get_heart_rate(self):
         heart_rate = self.heart_rate_monitor.get_current_heart_rate()
-        self.heart_rate_samples.append(heart_rate) 
+        self.heart_rate_samples.append(heart_rate)
+        self.current_lap_heart_rate_samples.append(heart_rate)  
         return heart_rate
 
     def get_average_heart_rate(self):
@@ -30,4 +33,16 @@ class HeartRateCollector:
         return sum(self.heart_rate_samples) / len(self.heart_rate_samples)
 
     def reset_heart_rate_samples(self):
-        self.heart_rate_samples = [] 
+        self.heart_rate_samples = []
+
+    def start_new_lap(self):
+        self.previous_lap_average_heart_rate = self.get_current_lap_average_heart_rate()
+        self.current_lap_heart_rate_samples = []
+
+    def get_current_lap_average_heart_rate(self): 
+        if not self.current_lap_heart_rate_samples:
+            return 0
+        return sum(self.current_lap_heart_rate_samples) / len(self.current_lap_heart_rate_samples)
+    
+    def get_previous_lap_average_heart_rate(self):
+        return self.previous_lap_average_heart_rate
