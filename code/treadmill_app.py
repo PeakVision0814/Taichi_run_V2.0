@@ -227,13 +227,15 @@ class TreadmillApp:
         if age is None or level is None:
             return
         target_distance, max_time, target_heart_rate = self._determine_targets()
+        if self.controller: 
+            self.controller.heart_rate_collector.reset_heart_rate_samples()
         self._initialize_controller(age,
                                     level,
                                     circle_distance, 
                                     target_distance,
                                     max_time,
                                     target_heart_rate)
-        self.controller.heart_rate_collector.reset_heart_rate_samples()
+        
         self._update_button_states(start_running=True)
 
 

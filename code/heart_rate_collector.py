@@ -24,7 +24,7 @@ class HeartRateCollector:
     def get_heart_rate(self):
         heart_rate = self.heart_rate_monitor.get_current_heart_rate()
         self.heart_rate_samples.append(heart_rate)
-        self.current_lap_heart_rate_samples.append(heart_rate)  
+        self.current_lap_heart_rate_samples.append(heart_rate)
         return heart_rate
 
     def get_average_heart_rate(self):
