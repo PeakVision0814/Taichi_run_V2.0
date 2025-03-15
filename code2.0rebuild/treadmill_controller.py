@@ -149,10 +149,10 @@ class TreadmillController:
                             new_speed = current_speed - 0.3 
                             self.reduction_counter += 1
                             reduction_type = "小降速"
-                        else: # "大降速"
-                            new_speed = current_speed - 0.5 # 减速0.5，最低3.5km/h
+                        else: 
+                            new_speed = current_speed - 0.5 
                             reduction_type = "大降速"
-                        if new_speed < 3.5: # 低于3.5km/h停止
+                        if new_speed < 3.5: 
                             new_speed = 0.0
                             self.is_running = False
                             self._exercise_completed()
@@ -160,7 +160,7 @@ class TreadmillController:
                         else:
                             self.simulator.set_speed(new_speed)
                             print(f"完成圈程 {self.laps_completed}, {reduction_type} 速度调整为 {new_speed} km/h，本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
-                    else: # Normal speed progression if heart rate not exceeded
+                    else: 
                         self.current_speed_index += 1
                         if self.current_speed_index < len(self.speed_levels):
                             new_speed = self.speed_levels[self.current_speed_index]
@@ -198,11 +198,11 @@ class TreadmillController:
         distance_text = f"{distance_covered:.2f} 米"
         # lap_text = f"{self.laps_completed} 圈"
 
-        if self.lap_distance > 0: #  <---  [修改 1.1] 增加判断，避免除以零错误
-            current_lap_float = distance_covered / self.lap_distance #  <---  [修改 1.2] 计算浮点数圈数
-            lap_text = f"{int(current_lap_float)} 圈" #  <---  [修改 1.3] 格式化为带小数的圈数
+        if self.lap_distance > 0: 
+            current_lap_float = distance_covered / self.lap_distance 
+            lap_text = f"{int(current_lap_float)} 圈" 
         else:
-            lap_text = "0 圈" # 或者其他默认值，当 lap_distance 为 0 时
+            lap_text = "0 圈" 
 
         self.current_speed_label.after(0, self.current_speed_label.config, {"text": current_speed_text})
         self.distance_label.after(0, self.distance_label.config, {"text": distance_text})
@@ -228,6 +228,9 @@ class TreadmillController:
             distance = float(distance_str)
             if distance <= 0:
                 messagebox.showerror("错误", "圈程距离必须是正数。")
+                return None
+            if distance < 50:
+                messagebox.showerror("错误", "圈程距离必须大于等于50米。")
                 return None
             return distance
         except ValueError:

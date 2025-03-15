@@ -63,8 +63,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.lap_average_rate_label = tk.Label(self, text="0 bpm")
         self.lap_average_rate_label.grid(row=7, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5) # 原本 "当前速度" 是 row=8, 现在 "上圈平均心率" 放到 row=8
-        self.last_lap_average_rate_label = tk.Label(self, text="0 bpm") # 上圈平均心率 label
+        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5) 
+        self.last_lap_average_rate_label = tk.Label(self, text="0 bpm") 
         self.last_lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
 
         tk.Label(self, text="当前速度:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
@@ -102,25 +102,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.elapsed_time = 0
         self.timer_running = False
         self.timer_id = None
-        self.is_exercising = False  #  <---  [修改 1] 初始化运动状态标记为 False
+        self.is_exercising = False  
 
 
     def update_target(self, event):
-        """根据选择的等级更新目标"""
         level = self.level_var.get()
         if level in self.level_targets:
             self.target_label.config(text=str(self.level_targets[level]))
         else:
             self.target_label.config(text="无")
 
-    def on_heart_rate_received(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): # 更新方法签名，接收新的平均心率参数
+    def on_heart_rate_received(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): 
         self.after(0, self._update_heart_rate_label, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate)
 
 
-    def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): # 更新方法签名
-        self.current_rate_label.config(text=f"{heart_rate} bpm") #  当前心率始终更新
+    def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): 
+        self.current_rate_label.config(text=f"{heart_rate} bpm") 
 
-        if self.is_exercising: #  <---  [修改 4] 只有在运动进行时才更新平均心率相关标签
+        if self.is_exercising: 
             self.average_rate_label.config(text=f"{average_heart_rate:.1f} bpm")
             self.lap_average_rate_label.config(text=f"{lap_average_heart_rate:.1f} bpm")
             self.last_lap_average_rate_label.config(text=f"{last_lap_average_rate:.1f} bpm")
@@ -140,29 +139,26 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.elapsed_time = 0
             self.timer_running = True
             self.update_timer()
-            self.is_exercising = True  #  <---  [修改 2] 设置运动状态为 True，表示运动开始
+            self.is_exercising = True 
 
 
     def stop_treadmill(self):
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.treadmill_controller.stop_exercise()
-        self.stop_timer() # 停止定时器
-        self.is_exercising = False  #  <---  [修改 3] 设置运动状态为 False，表示运动结束
-        self.average_rate_label.config(text="0 bpm")       #  <---  [修改 3] 重置平均心率显示
-        self.lap_average_rate_label.config(text="0 bpm")   #  <---  [修改 3] 重置本圈平均心率显示
-        self.last_lap_average_rate_label.config(text="0 bpm") # <---  [修改 3] 重置上圈平均心率显示
-
+        self.stop_timer() 
+        self.is_exercising = False  
+        self.average_rate_label.config(text="0 bpm")     
+        self.lap_average_rate_label.config(text="0 bpm")   
+        self.last_lap_average_rate_label.config(text="0 bpm") 
 
     def stop_timer(self):
-        """停止计时器"""
         if self.timer_running:
             self.timer_running = False
             if self.timer_id is not None:
                 self.after_cancel(self.timer_id)
                 self.timer_id = None
     def update_timer(self):
-        """更新时间标签"""
         if self.timer_running:
             current_time = time.time()
             self.elapsed_time = int(current_time - self.start_time)
@@ -170,7 +166,6 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.time_label.config(text=time_str)
             self.timer_id = self.after(1000, self.update_timer)
     def format_time(self, seconds):
-        """将秒数格式化为 分:秒 形式"""
         minutes = seconds // 60
         secs = seconds % 60
         return "{:02d}:{:02d}".format(minutes, secs)
