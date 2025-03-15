@@ -21,14 +21,23 @@ def get_speed_levels(level):
     return SPEED_LEVELS[level]
 
 class TreadmillController:
-    def __init__(self, treadmill_simulator, level_var, distance_entry,
-                current_speed_label, distance_label, lap_label, exercise_completion_callback, heart_rate_collector):
+    def __init__(self,
+                 treadmill_simulator,
+                 level_var,
+                 distance_entry,
+                current_speed_label,
+                distance_label,
+                lap_label,
+                exercise_completion_callback,
+                heart_rate_collector,
+                age_entry):
         self.simulator = treadmill_simulator
         self.level_var = level_var
         self.distance_entry = distance_entry
         self.current_speed_label = current_speed_label
         self.distance_label = distance_label
         self.lap_label = lap_label
+        self.age_entry = age_entry  #  <---  [修改 in treadmill_controller.py] Store age_entry
 
         self.speed_levels = []
         self.current_speed_index = 0
@@ -40,7 +49,14 @@ class TreadmillController:
         self.update_speed_after_lap_thread = None
         self.lock = threading.Lock()
         self.exercise_completion_callback = exercise_completion_callback
-        self.heart_rate_collector = heart_rate_collector # 保存 heart_rate_collector 实例
+        self.heart_rate_collector = heart_rate_collector 
+
+        self.max_heart_rate = 0 #  <---  [修改 in treadmill_controller.py] Initialize max_heart_rate
+        self.heart_rate_threshold = 0 #  <---  [修改 in treadmill_controller.py] Initialize heart_rate_threshold
+        self.is_heart_rate_exceeded = False #  <---  [修改 in treadmill_controller.py] Initialize is_heart_rate_exceeded
+        self.reduction_counter = 0 #  <---  [修改 in treadmill_controller.py] Initialize reduction_counter
+        self.reduction_stage = "small" #  <---  [修改 in treadmill_controller.py] Initialize reduction_stage
+
 
     def start_exercise(self):
         if self.is_running:
@@ -52,7 +68,24 @@ class TreadmillController:
 
         distance_per_lap = self._get_lap_distance()
         if distance_per_lap is None:
-            return False 
+            return False
+        
+        age_str = self.age_entry.get() #  <---  [修改 in treadmill_controller.py] Get age from entry
+        if not age_str:
+            messagebox.showerror("错误", "请输入年龄。")
+            return False
+        try:
+            age = int(age_str)
+            if age <= 0:
+                messagebox.showerror("错误", "年龄必须是正整数。")
+                return False
+            self.max_heart_rate = 220 - age #  <---  [修改 in treadmill_controller.py] Calculate max heart rate
+            self.heart_rate_threshold = self.max_heart_rate * 0.8 #  <---  [修改 in treadmill_controller.py] Calculate heart rate threshold
+        except ValueError:
+            messagebox.showerror("错误", "年龄必须是整数。")
+            return False
+
+
 
         try:
             self.speed_levels = get_speed_levels(int(level))
@@ -69,6 +102,11 @@ class TreadmillController:
         self.laps_completed = 0
         self.last_distance = 0
         self.is_running = True
+        self.is_heart_rate_exceeded = False #  <---  [修改 in treadmill_controller.py] Reset heart rate exceeded flag
+        self.reduction_counter = 0 #  <---  [修改 in treadmill_controller.py] Reset reduction counter
+        self.reduction_stage = "small" #  <---  [修改 in treadmill_controller.py] Reset reduction stage
+
+
 
         self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
@@ -96,20 +134,54 @@ class TreadmillController:
             current_distance = self.simulator.get_distance_covered()
             distance_since_last_update = current_distance - self.last_distance
             if distance_since_last_update >= self.lap_distance:
+                lap_average_heart_rate = self.heart_rate_collector.get_lap_average_heart_rate() #  <---  [修改 in treadmill_controller.py] Get lap average heart rate
+
                 with self.lock:
                     self.laps_completed += 1
                     self.last_distance = current_distance
                     self.heart_rate_collector.start_new_lap() #  <---  在圈程完成后，通知 HeartRateCollector 开始新圈程
-                    self.current_speed_index += 1
-                    if self.current_speed_index < len(self.speed_levels):
-                        new_speed = self.speed_levels[self.current_speed_index]
-                        self.simulator.set_speed(new_speed)
-                        print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h")
-                    else:
-                        print("速度列表已结束，停止运动。")
-                        self.is_running = False
-                        self._exercise_completed()
+                    if lap_average_heart_rate > self.heart_rate_threshold and not self.is_heart_rate_exceeded:
+                        self.is_heart_rate_exceeded = True
+                        print(f"本圈平均心率 {lap_average_heart_rate:.1f} bpm 超出阈值 {self.heart_rate_threshold:.1f} bpm，下一圈程开始降速")
+                    if self.is_heart_rate_exceeded: # Speed reduction logic if heart rate exceeded
+                        current_speed = self.simulator.get_current_speed()
+                        if self.reduction_counter < 3: # "小降速" 3次
+                            new_speed = max(current_speed - 0.3, 3.5) # 减速0.3，最低3.5km/h
+                            self.reduction_counter += 1
+                            reduction_type = "小降速"
+                        else: # "大降速"
+                            new_speed = max(current_speed - 0.5, 3.5) # 减速0.5，最低3.5km/h
+                            reduction_type = "大降速"
+                        if new_speed < 3.5: # 低于3.5km/h停止
+                            new_speed = 0.0
+                            self.is_running = False
+                            self._exercise_completed()
+                            print(f"{reduction_type}, 速度降至低于3.5km/h，运动停止。")
+                        else:
+                            self.simulator.set_speed(new_speed)
+                            print(f"完成圈程 {self.laps_completed}, {reduction_type} 速度调整为 {new_speed} km/h，本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
+                    else: # Normal speed progression if heart rate not exceeded
+                        self.current_speed_index += 1
+                        if self.current_speed_index < len(self.speed_levels):
+                            new_speed = self.speed_levels[self.current_speed_index]
+                            self.simulator.set_speed(new_speed)
+                            print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h, 本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
+                        else:
+                            print("速度列表已结束，停止运动。")
+                            self.is_running = False
+                            self._exercise_completed()
             self._schedule_ui_update()
+
+            #         self.current_speed_index += 1
+            #         if self.current_speed_index < len(self.speed_levels):
+            #             new_speed = self.speed_levels[self.current_speed_index]
+            #             self.simulator.set_speed(new_speed)
+            #             print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h")
+            #         else:
+            #             print("速度列表已结束，停止运动。")
+            #             self.is_running = False
+            #             self._exercise_completed()
+            # self._schedule_ui_update()
 
     def _exercise_completed(self):
         level = self._get_selected_level()

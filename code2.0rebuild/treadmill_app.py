@@ -94,7 +94,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.distance_label,
             self.lap_label,
             self.on_exercise_completion,
-            collector
+            collector,
+            self.age_entry
         )
 
         self.start_time = None
