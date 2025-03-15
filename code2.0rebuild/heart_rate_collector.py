@@ -14,17 +14,14 @@ class HeartRateCollector:
         self.latest_heart_rate = 0 
 
     def start_collection(self):
-        """启动心率收集线程"""
         if not self.running:
             self.running = True
 
     def stop_collection(self):
-        """停止心率收集线程"""
         if self.running:
             self.running = False
 
     def _notify_listeners(self, heart_rate):
-        """通知所有监听器，并存储心率数据"""
         self.heart_rates.append(heart_rate) 
         self.current_lap_heart_rates.append(heart_rate) 
         self.latest_heart_rate = heart_rate
