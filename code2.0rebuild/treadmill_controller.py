@@ -30,14 +30,16 @@ class TreadmillController:
                 lap_label,
                 exercise_completion_callback,
                 heart_rate_collector,
-                age_entry):
+                age_entry,
+                post_exercise_average_rate_label):
         self.simulator = treadmill_simulator
         self.level_var = level_var
         self.distance_entry = distance_entry
         self.current_speed_label = current_speed_label
         self.distance_label = distance_label
         self.lap_label = lap_label
-        self.age_entry = age_entry  #  <---  [修改 in treadmill_controller.py] Store age_entry
+        self.age_entry = age_entry
+        self.post_exercise_average_rate_label = post_exercise_average_rate_label
 
         self.speed_levels = []
         self.current_speed_index = 0
@@ -45,17 +47,19 @@ class TreadmillController:
         self.laps_completed = 0
         self.speed_update_interval = 1
         self.is_running = False
-        self.last_distance = 0 
+        self.last_distance = 0
         self.update_speed_after_lap_thread = None
         self.lock = threading.Lock()
         self.exercise_completion_callback = exercise_completion_callback
-        self.heart_rate_collector = heart_rate_collector 
+        self.heart_rate_collector = heart_rate_collector
 
-        self.max_heart_rate = 0 #  <---  [修改 in treadmill_controller.py] Initialize max_heart_rate
-        self.heart_rate_threshold = 0 #  <---  [修改 in treadmill_controller.py] Initialize heart_rate_threshold
-        self.is_heart_rate_exceeded = False #  <---  [修改 in treadmill_controller.py] Initialize is_heart_rate_exceeded
-        self.reduction_counter = 0 #  <---  [修改 in treadmill_controller.py] Initialize reduction_counter
-        self.reduction_stage = "small" #  <---  [修改 in treadmill_controller.py] Initialize reduction_stage
+        self.max_heart_rate = 0
+        self.heart_rate_threshold = 0
+        self.is_heart_rate_exceeded = False
+        self.reduction_counter = 0
+        self.reduction_stage = "small"
+        self.post_exercise_heart_rates = [] 
+        self.post_exercise_collection_active = False 
 
 
     def start_exercise(self):
@@ -64,13 +68,13 @@ class TreadmillController:
 
         level = self._get_selected_level()
         if level is None:
-            return False 
+            return False
 
         distance_per_lap = self._get_lap_distance()
         if distance_per_lap is None:
             return False
-        
-        age_str = self.age_entry.get() #  <---  [修改 in treadmill_controller.py] Get age from entry
+
+        age_str = self.age_entry.get()
         if not age_str:
             messagebox.showerror("错误", "请输入年龄。")
             return False
@@ -79,12 +83,11 @@ class TreadmillController:
             if age <= 0:
                 messagebox.showerror("错误", "年龄必须是正整数。")
                 return False
-            self.max_heart_rate = 220 - age #  <---  [修改 in treadmill_controller.py] Calculate max heart rate
-            self.heart_rate_threshold = self.max_heart_rate * 0.8 #  <---  [修改 in treadmill_controller.py] Calculate heart rate threshold
+            self.max_heart_rate = 220 - age
+            self.heart_rate_threshold = self.max_heart_rate * 0.8
         except ValueError:
             messagebox.showerror("错误", "年龄必须是整数。")
             return False
-
 
 
         try:
@@ -102,18 +105,18 @@ class TreadmillController:
         self.laps_completed = 0
         self.last_distance = 0
         self.is_running = True
-        self.is_heart_rate_exceeded = False #  <---  [修改 in treadmill_controller.py] Reset heart rate exceeded flag
-        self.reduction_counter = 0 #  <---  [修改 in treadmill_controller.py] Reset reduction counter
-        self.reduction_stage = "small" #  <---  [修改 in treadmill_controller.py] Reset reduction stage
-
+        self.is_heart_rate_exceeded = False
+        self.reduction_counter = 0
+        self.reduction_stage = "small"
+        self.post_exercise_collection_active = False 
 
 
         self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
         self.simulator.set_speed(initial_speed)
         self.simulator.start()
-        self._update_ui_labels() 
-        self._start_speed_update_thread() 
+        self._update_ui_labels()
+        self._start_speed_update_thread()
         return True
 
     def stop_exercise(self):
@@ -121,11 +124,43 @@ class TreadmillController:
             self.is_running = False
             self.simulator.stop()
             if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
-                self.update_speed_after_lap_thread.join(timeout=1) 
+                self.update_speed_after_lap_thread.join(timeout=1)
             self._update_ui_labels()
+            self._start_post_exercise_heart_rate_collection() 
+
+    def _start_post_exercise_heart_rate_collection(self):
+        self.post_exercise_heart_rates = [] 
+        self.post_exercise_collection_active = True
+        self._collect_post_exercise_heart_rate(60) 
+
+    def _collect_post_exercise_heart_rate(self, seconds_left):
+        if not self.post_exercise_collection_active:
+            return
+
+        current_heart_rate = self.heart_rate_collector.get_current_heart_rate() 
+        if current_heart_rate is not None:
+            self.post_exercise_heart_rates.append(current_heart_rate)
+
+        if self.post_exercise_heart_rates: 
+            average_post_exercise_heart_rate = sum(self.post_exercise_heart_rates) / len(self.post_exercise_heart_rates)
+            self.post_exercise_average_rate_label.config(text=f"{average_post_exercise_heart_rate:.1f} bpm")
+        else:
+            self.post_exercise_average_rate_label.config(text="等待心率数据...")
+        
+
+        if seconds_left > 0:
+            self.post_exercise_average_rate_label.after(1000, self._collect_post_exercise_heart_rate, seconds_left - 1) 
+        else:
+            self.post_exercise_collection_active = False 
+            if self.post_exercise_heart_rates:
+                average_post_exercise_heart_rate = sum(self.post_exercise_heart_rates) / len(self.post_exercise_heart_rates)
+                self.post_exercise_average_rate_label.config(text=f"{average_post_exercise_heart_rate:.1f} bpm")
+            else:
+                self.post_exercise_average_rate_label.config(text="无法获取心率数据") 
+
 
     def _start_speed_update_thread(self):
-        self.update_speed_after_lap_thread = threading.Thread(target=self._update_speed_after_lap, daemon=True) 
+        self.update_speed_after_lap_thread = threading.Thread(target=self._update_speed_after_lap, daemon=True)
         self.update_speed_after_lap_thread.start()
 
     def _update_speed_after_lap(self):
@@ -143,24 +178,24 @@ class TreadmillController:
                     if lap_average_heart_rate > self.heart_rate_threshold and not self.is_heart_rate_exceeded:
                         self.is_heart_rate_exceeded = True
                         print(f"本圈平均心率 {lap_average_heart_rate:.1f} bpm 超出阈值 {self.heart_rate_threshold:.1f} bpm，下一圈程开始降速")
-                    if self.is_heart_rate_exceeded: 
+                    if self.is_heart_rate_exceeded:
                         current_speed = self.simulator.get_current_speed()
                         if self.reduction_counter < 3:
-                            new_speed = current_speed - 0.3 
+                            new_speed = current_speed - 0.3
                             self.reduction_counter += 1
                             reduction_type = "小降速"
-                        else: 
-                            new_speed = current_speed - 0.5 
+                        else:
+                            new_speed = current_speed - 0.5
                             reduction_type = "大降速"
-                        if new_speed < 3.5: 
+                        if new_speed < 3.5:
                             new_speed = 0.0
                             self.is_running = False
-                            self._exercise_completed()
+                            self._exercise_completed(reason="heart_rate_stop")
                             print(f"{reduction_type}, 速度降至低于3.5km/h，运动停止。")
                         else:
                             self.simulator.set_speed(new_speed)
                             print(f"完成圈程 {self.laps_completed}, {reduction_type} 速度调整为 {new_speed} km/h，本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
-                    else: 
+                    else:
                         self.current_speed_index += 1
                         if self.current_speed_index < len(self.speed_levels):
                             new_speed = self.speed_levels[self.current_speed_index]
@@ -172,37 +207,43 @@ class TreadmillController:
                             self._exercise_completed()
             self._schedule_ui_update()
 
-    def _exercise_completed(self):
+    def _exercise_completed(self, reason = None):
         level = self._get_selected_level()
-        if level:
+        if reason == "heart_rate_stop":
+            message = f"本次等级{level}运动结束，第{self.laps_completed}圈时心率略高，请注意下次调整等级"
+        elif level:
             message = f"等级{level}运动已完成！"
-            messagebox.showinfo("完成运动", message) 
-        self.stop_exercise() 
+        else:
+            message = "运动结束！"
+
+        messagebox.showinfo("完成运动", message)
+        self.stop_exercise()
         if self.exercise_completion_callback:
             self.exercise_completion_callback()
 
 
     def _schedule_ui_update(self):
-        if self.is_running: 
+        if self.is_running:
             self.current_speed_label.after(0, self._update_ui_labels)
 
 
     def _update_ui_labels(self):
         if not self.is_running:
             current_speed_text = "0.0 km/h"
+            if not self.post_exercise_collection_active: 
+                self.post_exercise_average_rate_label.config(text="等待运动停止...")
         else:
             current_speed = self.simulator.get_current_speed()
             current_speed_text = f"{current_speed:.1f} km/h"
 
         distance_covered = self.simulator.get_distance_covered()
         distance_text = f"{distance_covered:.2f} 米"
-        # lap_text = f"{self.laps_completed} 圈"
 
-        if self.lap_distance > 0: 
-            current_lap_float = distance_covered / self.lap_distance 
-            lap_text = f"{int(current_lap_float)} 圈" 
+        if self.lap_distance > 0:
+            current_lap_float = distance_covered / self.lap_distance
+            lap_text = f"{int(current_lap_float)} 圈"
         else:
-            lap_text = "0 圈" 
+            lap_text = "0 圈"
 
         self.current_speed_label.after(0, self.current_speed_label.config, {"text": current_speed_text})
         self.distance_label.after(0, self.distance_label.config, {"text": distance_text})

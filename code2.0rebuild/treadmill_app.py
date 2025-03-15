@@ -1,3 +1,4 @@
+# treadmill_app.py
 import tkinter as tk
 import time
 from tkinter import ttk
@@ -63,8 +64,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.lap_average_rate_label = tk.Label(self, text="0 bpm")
         self.lap_average_rate_label.grid(row=7, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5) 
-        self.last_lap_average_rate_label = tk.Label(self, text="0 bpm") 
+        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5)
+        self.last_lap_average_rate_label = tk.Label(self, text="0 bpm")
         self.last_lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
 
         tk.Label(self, text="当前速度:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
@@ -83,9 +84,15 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.lap_label = tk.Label(self, text="0 圈")
         self.lap_label.grid(row=12, column=1, padx=10, pady=5)
 
-        open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
-        open_ui_button.grid(row=13, column=0, columnspan=2, pady=10)
+        #  [修改 in treadmill_app.py 1]: Add new label for post-exercise heart rate
+        tk.Label(self, text="停止运动后平均心率 (1分钟):").grid(row=13, column=0, sticky="w", padx=10, pady=5)
+        self.post_exercise_average_rate_label = tk.Label(self, text="等待运动停止...")
+        self.post_exercise_average_rate_label.grid(row=13, column=1, padx=10, pady=5)
 
+        open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
+        open_ui_button.grid(row=14, column=0, columnspan=2, pady=10)
+
+        #  [修改 in treadmill_app.py 2]: Pass the new label to TreadmillController
         self.treadmill_controller = TreadmillController(
             self.treadmill_simulator,
             self.level_var,
@@ -95,14 +102,15 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.lap_label,
             self.on_exercise_completion,
             collector,
-            self.age_entry
+            self.age_entry,
+            self.post_exercise_average_rate_label # Pass the new label here
         )
 
         self.start_time = None
         self.elapsed_time = 0
         self.timer_running = False
         self.timer_id = None
-        self.is_exercising = False  
+        self.is_exercising = False
 
 
     def update_target(self, event):
@@ -112,14 +120,14 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         else:
             self.target_label.config(text="无")
 
-    def on_heart_rate_received(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): 
+    def on_heart_rate_received(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate):
         self.after(0, self._update_heart_rate_label, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate)
 
 
-    def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): 
-        self.current_rate_label.config(text=f"{heart_rate} bpm") 
+    def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate):
+        self.current_rate_label.config(text=f"{heart_rate} bpm")
 
-        if self.is_exercising: 
+        if self.is_exercising:
             self.average_rate_label.config(text=f"{average_heart_rate:.1f} bpm")
             self.lap_average_rate_label.config(text=f"{lap_average_heart_rate:.1f} bpm")
             self.last_lap_average_rate_label.config(text=f"{last_lap_average_rate:.1f} bpm")
@@ -139,18 +147,19 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.elapsed_time = 0
             self.timer_running = True
             self.update_timer()
-            self.is_exercising = True 
+            self.is_exercising = True
 
 
     def stop_treadmill(self):
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.treadmill_controller.stop_exercise()
-        self.stop_timer() 
-        self.is_exercising = False  
-        self.average_rate_label.config(text="0 bpm")     
-        self.lap_average_rate_label.config(text="0 bpm")   
-        self.last_lap_average_rate_label.config(text="0 bpm") 
+        self.stop_timer()
+        self.is_exercising = False
+        self.average_rate_label.config(text="0 bpm")
+        self.lap_average_rate_label.config(text="0 bpm")
+        self.last_lap_average_rate_label.config(text="0 bpm")
+
 
     def stop_timer(self):
         if self.timer_running:
