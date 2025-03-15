@@ -24,7 +24,7 @@ class HeartRateSimulator:
     def _simulate(self):
         while self.running and self.rate_range:
             self.rate = random.randint(self.rate_range[0], self.rate_range[1])
-            print(f"心率: {self.rate} bpm")
+            # print(f"心率: {self.rate} bpm")
             self.collector._notify_listeners(self.rate)
             time.sleep(1)
 

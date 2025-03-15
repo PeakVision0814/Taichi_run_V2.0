@@ -54,25 +54,25 @@ class TreadmillController:
     def start_exercise(self):
         """启动跑步机运动。"""
         if self.is_running:
-            return # 避免重复启动
+            return False # 避免重复启动
 
         level = self._get_selected_level()
         if level is None:
-            return # 如果等级无效，则不启动
+            return False # 如果等级无效，则不启动
 
         distance_per_lap = self._get_lap_distance()
         if distance_per_lap is None:
-            return # 如果圈程距离无效，则不启动
+            return False # 如果圈程距离无效，则不启动
 
         try:
             self.speed_levels = get_speed_levels(int(level))
         except ValueError as e:
             messagebox.showerror("错误", str(e))
-            return
+            return False
 
         if not self.speed_levels:
             messagebox.showerror("错误", "该等级没有预设速度。")
-            return
+            return False
 
         self.lap_distance = distance_per_lap
         self.current_speed_index = 0
@@ -80,11 +80,13 @@ class TreadmillController:
         self.last_distance = 0
         self.is_running = True
 
+        self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
         self.simulator.set_speed(initial_speed)
         self.simulator.start()
         self._update_ui_labels() # 立即更新UI
         self._start_speed_update_thread() # 启动速度更新线程
+        return True
 
     def stop_exercise(self):
         """停止跑步机运动。"""

@@ -47,7 +47,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         # 开始运动和停止运动按钮
         self.start_button = tk.Button(self, text="开始运动", command=self.start_treadmill) # 修改 command
         self.start_button.grid(row=4, column=0, padx=10, pady=5)
-        self.stop_button = tk.Button(self, text="停止运动", command=self.stop_treadmill) # 修改 command
+        self.stop_button = tk.Button(self, text="停止运动", command=self.stop_treadmill, state=tk.DISABLED) # 修改 command
         self.stop_button.grid(row=4, column=1, padx=10, pady=5)
 
         # 当前心率
@@ -117,10 +117,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         heart_rate_ui_window = tk.Toplevel(self)
         HeartRateUI(heart_rate_ui_window, self.collector)
 
-    def start_treadmill(self): # 新的方法来启动跑步机
-        self.treadmill_controller.start_exercise()
-    def stop_treadmill(self): # 新的方法来停止跑步机
-        self.treadmill_controller.stop_exercise()
+    def start_treadmill(self):
+        # 调用 TreadmillController 的 start_exercise 方法，并获取返回值
+        start_success = self.treadmill_controller.start_exercise()
+        # 检查返回值，只有启动成功才改变按钮状态
+        if start_success:
+            # 禁用开始按钮，启用停止按钮
+            self.start_button.config(state=tk.DISABLED)
+            self.stop_button.config(state=tk.NORMAL)
+            # 重置运动距离显示为 0 米 (保持不变)
+            self.distance_label.config(text="0 米")
+        # 如果启动失败 (start_success 为 False)，则按钮状态保持不变，让用户可以修改输入并重试
+
+    def stop_treadmill(self):
+        # 启用开始按钮，禁用停止按钮
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        # 调用 TreadmillController 的 stop_exercise 方法
+
 
 
 if __name__ == "__main__":
