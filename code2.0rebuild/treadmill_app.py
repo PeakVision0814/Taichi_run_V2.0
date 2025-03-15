@@ -63,24 +63,29 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.lap_average_rate_label = tk.Label(self, text="0 bpm")
         self.lap_average_rate_label.grid(row=7, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="当前速度:").grid(row=8, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5) # 原本 "当前速度" 是 row=8, 现在 "上圈平均心率" 放到 row=8
+        self.last_lap_average_rate_label = tk.Label(self, text="0 bpm") # 上圈平均心率 label
+        self.last_lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
+
+
+        tk.Label(self, text="当前速度:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
         self.current_speed_label = tk.Label(self, text="0 m/s")
-        self.current_speed_label.grid(row=8, column=1, padx=10, pady=5)
+        self.current_speed_label.grid(row=9, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="运动时间:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="运动时间:").grid(row=10, column=0, sticky="w", padx=10, pady=5)
         self.time_label = tk.Label(self, text="00:00")
-        self.time_label.grid(row=9, column=1, padx=10, pady=5)
+        self.time_label.grid(row=10, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="运动距离:").grid(row=10, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="运动距离:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
         self.distance_label = tk.Label(self, text="0 米")
-        self.distance_label.grid(row=10, column=1, padx=10, pady=5)
+        self.distance_label.grid(row=11, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="完成圈程:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="完成圈程:").grid(row=12, column=0, sticky="w", padx=10, pady=5)
         self.lap_label = tk.Label(self, text="0 圈")
-        self.lap_label.grid(row=11, column=1, padx=10, pady=5)
+        self.lap_label.grid(row=12, column=1, padx=10, pady=5)
 
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
-        open_ui_button.grid(row=12, column=0, columnspan=2, pady=10)
+        open_ui_button.grid(row=13, column=0, columnspan=2, pady=10)
 
         self.treadmill_controller = TreadmillController( 
             self.treadmill_simulator,
@@ -89,7 +94,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.current_speed_label, 
             self.distance_label, 
             self.lap_label,
-            self.on_exercise_completion
+            self.on_exercise_completion,
+            collector
         )
 
         self.start_time = None 
@@ -105,11 +111,16 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         else:
             self.target_label.config(text="无")
 
-    def on_heart_rate_received(self, heart_rate):
-        self.after(0, self._update_heart_rate_label, heart_rate)
+    def on_heart_rate_received(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): # 更新方法签名，接收新的平均心率参数
+        self.after(0, self._update_heart_rate_label, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate)
 
-    def _update_heart_rate_label(self, heart_rate):
+
+    def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): # 更新方法签名
         self.current_rate_label.config(text=f"{heart_rate} bpm")
+        self.average_rate_label.config(text=f"{average_heart_rate:.1f} bpm") # 显示一位小数
+        self.lap_average_rate_label.config(text=f"{lap_average_heart_rate:.1f} bpm") # 显示一位小数
+        self.last_lap_average_rate_label.config(text=f"{last_lap_average_rate:.1f} bpm") # 更新上圈平均心率 label, 显示一位小数
+
 
     def open_heart_rate_ui(self):
         heart_rate_ui_window = tk.Toplevel(self)

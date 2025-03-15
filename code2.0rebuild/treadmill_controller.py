@@ -22,7 +22,7 @@ def get_speed_levels(level):
 
 class TreadmillController:
     def __init__(self, treadmill_simulator, level_var, distance_entry,
-                current_speed_label, distance_label, lap_label, exercise_completion_callback):
+                current_speed_label, distance_label, lap_label, exercise_completion_callback, heart_rate_collector):
         self.simulator = treadmill_simulator
         self.level_var = level_var
         self.distance_entry = distance_entry
@@ -40,6 +40,7 @@ class TreadmillController:
         self.update_speed_after_lap_thread = None
         self.lock = threading.Lock()
         self.exercise_completion_callback = exercise_completion_callback
+        self.heart_rate_collector = heart_rate_collector # 保存 heart_rate_collector 实例
 
     def start_exercise(self):
         if self.is_running:
@@ -98,6 +99,7 @@ class TreadmillController:
                 with self.lock:
                     self.laps_completed += 1
                     self.last_distance = current_distance
+                    self.heart_rate_collector.start_new_lap() #  <---  在圈程完成后，通知 HeartRateCollector 开始新圈程
                     self.current_speed_index += 1
                     if self.current_speed_index < len(self.speed_levels):
                         new_speed = self.speed_levels[self.current_speed_index]
