@@ -106,19 +106,17 @@ class TreadmillController:
                     else:
                         print("速度列表已结束，停止运动。")
                         self.is_running = False
-                        self._exercise_completed() # 速度列表结束时调用 _exercise_completed 方法
+                        self._exercise_completed()
             self._schedule_ui_update()
 
     def _exercise_completed(self):
-        """运动完成后的处理，包括弹出消息框和调用回调函数"""
-        level = self._get_selected_level() # 获取当前等级，用于显示在消息框中
+        level = self._get_selected_level()
         if level:
             message = f"等级{level}运动已完成！"
-            messagebox.showinfo("完成运动", message) # 弹出消息框
-        self.stop_exercise() # 确保停止跑步机模拟器和线程
+            messagebox.showinfo("完成运动", message) 
+        self.stop_exercise() 
         if self.exercise_completion_callback:
-            self.exercise_completion_callback() # 调用回调函数，通知 TreadmillApp 更新按钮状态
-
+            self.exercise_completion_callback()
 
 
     def _schedule_ui_update(self):

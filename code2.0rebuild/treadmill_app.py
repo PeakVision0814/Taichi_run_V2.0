@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 from tkinter import ttk
 from heart_rate_collector import HeartRateCollector, HeartRateListener
 from heart_rate_ui import HeartRateUI
@@ -67,7 +68,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.current_speed_label.grid(row=8, column=1, padx=10, pady=5)
 
         tk.Label(self, text="运动时间:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
-        self.time_label = tk.Label(self, text="0 秒")
+        self.time_label = tk.Label(self, text="00:00")
         self.time_label.grid(row=9, column=1, padx=10, pady=5)
 
         tk.Label(self, text="运动距离:").grid(row=10, column=0, sticky="w", padx=10, pady=5)
@@ -88,8 +89,13 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.current_speed_label, 
             self.distance_label, 
             self.lap_label,
-            self.on_exercise_completion  # 传递回调参数
+            self.on_exercise_completion
         )
+
+        self.start_time = None 
+        self.elapsed_time = 0 
+        self.timer_running = False 
+        self.timer_id = None     
     
     def update_target(self, event):
         """根据选择的等级更新目标"""
@@ -115,11 +121,38 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
             self.distance_label.config(text="0 米")
+            self.start_time = time.time()  
+            self.elapsed_time = 0    
+            self.timer_running = True   
+            self.update_timer()          
+
 
     def stop_treadmill(self):
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.treadmill_controller.stop_exercise()
+        self.stop_timer() # 停止定时器
+
+    def stop_timer(self):
+        """停止计时器"""
+        if self.timer_running:
+            self.timer_running = False
+            if self.timer_id is not None:
+                self.after_cancel(self.timer_id) 
+                self.timer_id = None
+    def update_timer(self):
+        """更新时间标签"""
+        if self.timer_running:
+            current_time = time.time()
+            self.elapsed_time = int(current_time - self.start_time) 
+            time_str = self.format_time(self.elapsed_time)
+            self.time_label.config(text=time_str)
+            self.timer_id = self.after(1000, self.update_timer)
+    def format_time(self, seconds):
+        """将秒数格式化为 分:秒 形式"""
+        minutes = seconds // 60
+        secs = seconds % 60
+        return "{:02d}:{:02d}".format(minutes, secs) 
 
     def stop_app(self):
         if hasattr(self, 'heart_rate_simulator'):
