@@ -134,23 +134,23 @@ class TreadmillController:
             current_distance = self.simulator.get_distance_covered()
             distance_since_last_update = current_distance - self.last_distance
             if distance_since_last_update >= self.lap_distance:
-                lap_average_heart_rate = self.heart_rate_collector.get_lap_average_heart_rate() #  <---  [修改 in treadmill_controller.py] Get lap average heart rate
+                lap_average_heart_rate = self.heart_rate_collector.get_lap_average_heart_rate()
 
                 with self.lock:
                     self.laps_completed += 1
                     self.last_distance = current_distance
-                    self.heart_rate_collector.start_new_lap() #  <---  在圈程完成后，通知 HeartRateCollector 开始新圈程
+                    self.heart_rate_collector.start_new_lap()
                     if lap_average_heart_rate > self.heart_rate_threshold and not self.is_heart_rate_exceeded:
                         self.is_heart_rate_exceeded = True
                         print(f"本圈平均心率 {lap_average_heart_rate:.1f} bpm 超出阈值 {self.heart_rate_threshold:.1f} bpm，下一圈程开始降速")
-                    if self.is_heart_rate_exceeded: # Speed reduction logic if heart rate exceeded
+                    if self.is_heart_rate_exceeded: 
                         current_speed = self.simulator.get_current_speed()
-                        if self.reduction_counter < 3: # "小降速" 3次
-                            new_speed = max(current_speed - 0.3, 3.5) # 减速0.3，最低3.5km/h
+                        if self.reduction_counter < 3:
+                            new_speed = current_speed - 0.3 
                             self.reduction_counter += 1
                             reduction_type = "小降速"
                         else: # "大降速"
-                            new_speed = max(current_speed - 0.5, 3.5) # 减速0.5，最低3.5km/h
+                            new_speed = current_speed - 0.5 # 减速0.5，最低3.5km/h
                             reduction_type = "大降速"
                         if new_speed < 3.5: # 低于3.5km/h停止
                             new_speed = 0.0
@@ -171,17 +171,6 @@ class TreadmillController:
                             self.is_running = False
                             self._exercise_completed()
             self._schedule_ui_update()
-
-            #         self.current_speed_index += 1
-            #         if self.current_speed_index < len(self.speed_levels):
-            #             new_speed = self.speed_levels[self.current_speed_index]
-            #             self.simulator.set_speed(new_speed)
-            #             print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h")
-            #         else:
-            #             print("速度列表已结束，停止运动。")
-            #             self.is_running = False
-            #             self._exercise_completed()
-            # self._schedule_ui_update()
 
     def _exercise_completed(self):
         level = self._get_selected_level()
@@ -207,7 +196,13 @@ class TreadmillController:
 
         distance_covered = self.simulator.get_distance_covered()
         distance_text = f"{distance_covered:.2f} 米"
-        lap_text = f"{self.laps_completed} 圈"
+        # lap_text = f"{self.laps_completed} 圈"
+
+        if self.lap_distance > 0: #  <---  [修改 1.1] 增加判断，避免除以零错误
+            current_lap_float = distance_covered / self.lap_distance #  <---  [修改 1.2] 计算浮点数圈数
+            lap_text = f"{int(current_lap_float)} 圈" #  <---  [修改 1.3] 格式化为带小数的圈数
+        else:
+            lap_text = "0 圈" # 或者其他默认值，当 lap_distance 为 0 时
 
         self.current_speed_label.after(0, self.current_speed_label.config, {"text": current_speed_text})
         self.distance_label.after(0, self.distance_label.config, {"text": distance_text})
