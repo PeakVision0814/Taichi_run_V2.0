@@ -13,9 +13,11 @@ def save_exercise_data(filename, session_data, level, lap_distance, age, exercis
     try:
         with open(filepath, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(["Timestamp", "HeartRate", "Level", "LapDistance", "Age", "Duration(seconds)", "Laps"])
+            csv_writer.writerow(["Second", "HeartRate", "Level", "LapDistance", "Age", "Duration(seconds)", "Laps"])
+            elapsed_seconds = 0  #  [修正 3.2] 初始化秒数计数器
             for timestamp, heart_rate in session_data:
-                csv_writer.writerow([timestamp, heart_rate, level, lap_distance, age, exercise_duration_seconds, laps_completed])
+                elapsed_seconds += 1  #  [修正 3.3] 每条记录秒数递增 1
+                csv_writer.writerow([elapsed_seconds, heart_rate, level, lap_distance, age, exercise_duration_seconds, laps_completed])
         print(f"运动数据成功保存到: {filepath}")
     except Exception as e:
         print(f"保存运动数据到 CSV 文件时出错: {e}")
