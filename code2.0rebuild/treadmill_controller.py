@@ -2,6 +2,8 @@
 import time
 import threading
 from tkinter import messagebox
+import datetime  #  <--- [修改 1.1] 导入 datetime 模块
+from exercise_data_manager import save_exercise_data #  <--- [修改 1.2] 导入 save_exercise_data 函数
 
 SPEED_LEVELS = {
     2: [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.3, 5.6, 5.9, 6.2, 6.5, 6.8, 6.5, 6.0, 5.5, 5.0, 4.5, 4.0, 3.5],
@@ -58,8 +60,9 @@ class TreadmillController:
         self.is_heart_rate_exceeded = False
         self.reduction_counter = 0
         self.reduction_stage = "small"
-        self.post_exercise_heart_rates = [] 
-        self.post_exercise_collection_active = False 
+        self.post_exercise_heart_rates = []
+        self.post_exercise_collection_active = False
+        self.exercise_start_time = None #  <--- [修改 1.3] 添加 exercise_start_time 属性
 
 
     def start_exercise(self):
@@ -108,7 +111,8 @@ class TreadmillController:
         self.is_heart_rate_exceeded = False
         self.reduction_counter = 0
         self.reduction_stage = "small"
-        self.post_exercise_collection_active = False 
+        self.post_exercise_collection_active = False
+        self.exercise_start_time = datetime.datetime.now() #  <--- [修改 1.4] 记录运动开始时间
 
 
         self.simulator.distance_covered = 0.0
@@ -126,37 +130,56 @@ class TreadmillController:
             if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
                 self.update_speed_after_lap_thread.join(timeout=1)
             self._update_ui_labels()
-            self._start_post_exercise_heart_rate_collection() 
+            self._start_post_exercise_heart_rate_collection()
+
+            session_data = self.heart_rate_collector.get_session_data() #  <--- [修改 1.5] 获取运动会话数据
+            level = self._get_selected_level() #  <--- [修改 1.6] 获取运动等级
+            lap_distance = self._get_lap_distance() #  <--- [修改 1.7] 获取圈程距离
+            age_str = self.age_entry.get() #  <--- [修改 1.8] 获取年龄
+            age = int(age_str) if age_str else 0 #  确保 age 是整数，即使 age_str 为空
+            exercise_duration_seconds = 0
+            if self.exercise_start_time:
+                exercise_end_time = datetime.datetime.now()
+                exercise_duration_seconds = int((exercise_end_time - self.exercise_start_time).total_seconds()) #  <--- [修改 1.9] 计算运动时长
+
+            if session_data: #  <--- [修改 1.10] 检查是否有运动数据
+                timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S") #  <--- [修改 1.11] 生成基于开始时间的文件名
+                filename = f"heart_rate_log_{timestamp_str}.csv" #  <--- 修改为不包含 data/ 路径
+                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed) #  <--- [修改 1.13] 调用保存函数
+                print(f"运动数据已保存到: {filename}")
+            else:
+                print("没有心率数据需要保存。")
+
 
     def _start_post_exercise_heart_rate_collection(self):
-        self.post_exercise_heart_rates = [] 
+        self.post_exercise_heart_rates = []
         self.post_exercise_collection_active = True
-        self._collect_post_exercise_heart_rate(60) 
+        self._collect_post_exercise_heart_rate(60)
 
     def _collect_post_exercise_heart_rate(self, seconds_left):
         if not self.post_exercise_collection_active:
             return
 
-        current_heart_rate = self.heart_rate_collector.get_current_heart_rate() 
+        current_heart_rate = self.heart_rate_collector.get_current_heart_rate()
         if current_heart_rate is not None:
             self.post_exercise_heart_rates.append(current_heart_rate)
 
-        if self.post_exercise_heart_rates: 
+        if self.post_exercise_heart_rates:
             average_post_exercise_heart_rate = sum(self.post_exercise_heart_rates) / len(self.post_exercise_heart_rates)
             self.post_exercise_average_rate_label.config(text=f"{average_post_exercise_heart_rate:.1f} bpm")
         else:
             self.post_exercise_average_rate_label.config(text="等待心率数据...")
-        
+
 
         if seconds_left > 0:
-            self.post_exercise_average_rate_label.after(1000, self._collect_post_exercise_heart_rate, seconds_left - 1) 
+            self.post_exercise_average_rate_label.after(1000, self._collect_post_exercise_heart_rate, seconds_left - 1)
         else:
-            self.post_exercise_collection_active = False 
+            self.post_exercise_collection_active = False
             if self.post_exercise_heart_rates:
                 average_post_exercise_heart_rate = sum(self.post_exercise_heart_rates) / len(self.post_exercise_heart_rates)
                 self.post_exercise_average_rate_label.config(text=f"{average_post_exercise_heart_rate:.1f} bpm")
             else:
-                self.post_exercise_average_rate_label.config(text="无法获取心率数据") 
+                self.post_exercise_average_rate_label.config(text="无法获取心率数据")
 
 
     def _start_speed_update_thread(self):
@@ -230,7 +253,7 @@ class TreadmillController:
     def _update_ui_labels(self):
         if not self.is_running:
             current_speed_text = "0.0 km/h"
-            if not self.post_exercise_collection_active: 
+            if not self.post_exercise_collection_active:
                 self.post_exercise_average_rate_label.config(text="等待运动停止...")
         else:
             current_speed = self.simulator.get_current_speed()

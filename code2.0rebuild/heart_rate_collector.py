@@ -9,22 +9,26 @@ class HeartRateCollector:
         self.running = False
         self.thread = None
 
-        self.current_lap_heart_rates = [] 
-        self.last_lap_average_rate = 0 
-        self.latest_heart_rate = 0 
+        self.current_lap_heart_rates = []
+        self.last_lap_average_rate = 0
+        self.latest_heart_rate = 0
+        self.current_session_data = []  #  <--- [修改 1] 初始化 current_session_data 列表
 
     def start_collection(self):
         if not self.running:
             self.running = True
+        self.current_session_data = [] #  <--- [修改 2]  在开始收集时清空会话数据
 
     def stop_collection(self):
         if self.running:
             self.running = False
 
     def _notify_listeners(self, heart_rate):
-        self.heart_rates.append(heart_rate) 
-        self.current_lap_heart_rates.append(heart_rate) 
+        timestamp = time.time()  #  <--- [修改 3] 获取当前时间戳
+        self.heart_rates.append(heart_rate)
+        self.current_lap_heart_rates.append(heart_rate)
         self.latest_heart_rate = heart_rate
+        self.current_session_data.append((timestamp, heart_rate)) #  <--- [修改 4] 存储 (时间戳, 心率) 元组
         for listener in self.listeners:
             listener.on_heart_rate_received(heart_rate, self.get_average_heart_rate(), self.get_lap_average_heart_rate(), self.last_lap_average_rate)
 
@@ -50,12 +54,16 @@ class HeartRateCollector:
 
     def start_new_lap(self):
         current_lap_avg = self.get_lap_average_heart_rate()
-        if self.current_lap_heart_rates: 
+        if self.current_lap_heart_rates:
             self.last_lap_average_rate = current_lap_avg
-        self.current_lap_heart_rates = [] 
+        self.current_lap_heart_rates = []
 
     def get_current_heart_rate(self):
         return self.latest_heart_rate
+
+    def get_session_data(self):
+        """获取当前运动会话的心率和时间戳数据""" #  <--- [修改 5] 添加 get_session_data 方法
+        return self.current_session_data[:]
 
 
 class HeartRateListener:

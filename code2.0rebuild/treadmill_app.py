@@ -1,11 +1,14 @@
 # treadmill_app.py
 import tkinter as tk
 import time
-from tkinter import ttk
+import matplotlib.pyplot as plt
+from tkinter import ttk, filedialog #  <--- [修改 3.1] 导入 filedialog
 from heart_rate_collector import HeartRateCollector, HeartRateListener
 from heart_rate_ui import HeartRateUI
 from treadmill_simulator import TreadmillSimulator
 from treadmill_controller import TreadmillController
+from exercise_data_manager import get_history_record_previews, load_exercise_data #  <--- [修改 3.2] 导入 exercise_data_manager 中的函数
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class TreadmillApp(tk.Tk, HeartRateListener):
     def __init__(self, collector):
@@ -84,7 +87,6 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.lap_label = tk.Label(self, text="0 圈")
         self.lap_label.grid(row=12, column=1, padx=10, pady=5)
 
-        #  [修改 in treadmill_app.py 1]: Add new label for post-exercise heart rate
         tk.Label(self, text="停止运动后平均心率 (1分钟):").grid(row=13, column=0, sticky="w", padx=10, pady=5)
         self.post_exercise_average_rate_label = tk.Label(self, text="等待运动停止...")
         self.post_exercise_average_rate_label.grid(row=13, column=1, padx=10, pady=5)
@@ -92,7 +94,10 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
         open_ui_button.grid(row=14, column=0, columnspan=2, pady=10)
 
-        #  [修改 in treadmill_app.py 2]: Pass the new label to TreadmillController
+        #  [修改 in treadmill_app.py 3]: Add "历史跑步记录" button
+        history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record) #  <--- [修改 3.3] 创建 "历史跑步记录" 按钮
+        history_button.grid(row=15, column=0, columnspan=2, pady=10) #  <--- [修改 3.4] 放置 "历史跑步记录" 按钮
+
         self.treadmill_controller = TreadmillController(
             self.treadmill_simulator,
             self.level_var,
@@ -103,7 +108,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.on_exercise_completion,
             collector,
             self.age_entry,
-            self.post_exercise_average_rate_label # Pass the new label here
+            self.post_exercise_average_rate_label
         )
 
         self.start_time = None
@@ -111,6 +116,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.timer_running = False
         self.timer_id = None
         self.is_exercising = False
+        
 
 
     def update_target(self, event):
@@ -188,6 +194,85 @@ class TreadmillApp(tk.Tk, HeartRateListener):
     def on_exercise_completion(self):
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
+
+    #  [修改 in treadmill_app.py 4]: Implement open_history_record and show_history_detail
+    def open_history_record(self): #  <--- [修改 3.5] 实现 open_history_record 函数
+        history_window = tk.Toplevel(self)
+        history_window.title("历史跑步记录")
+        history_previews = get_history_record_previews() #  <--- [修改 3.6] 获取历史记录预览信息
+
+        if not history_previews: #  <--- [修改 3.7] 如果没有历史记录
+            tk.Label(history_window, text="没有历史跑步记录").pack(padx=20, pady=20)
+            return
+
+        listbox = tk.Listbox(history_window, width=80) #  <--- [修改 3.8] 创建 Listbox
+        listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+        for preview in history_previews: #  <--- [修改 3.9] 遍历历史记录预览信息
+            display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}" #  <--- [修改 3.10] 构建 Listbox 显示文本
+            listbox.insert(tk.END, display_text) #  <--- [修改 3.11] 将历史记录添加到 Listbox
+            listbox.itemconfig(tk.END, fg="blue") #  <--- [修改 3.12] 设置 Listbox 条目颜色，可根据需要调整
+
+        listbox.bind("<Double-Button-1>", lambda event: self.show_history_detail(history_previews, listbox.curselection())) #  <--- [修改 3.13] 绑定双击事件
+
+    def show_history_detail(self, history_previews, selection_indices):
+        if not selection_indices:
+            return
+        selected_index = int(selection_indices[0])
+        if 0 <= selected_index < len(history_previews):
+            selected_record_preview = history_previews[selected_index]
+            filename = selected_record_preview['filename']
+            filepath = "data/" + filename
+            exercise_data = load_exercise_data(filename)
+            if exercise_data:
+                detail_window = tk.Toplevel(self)
+                detail_window.title(f"历史记录详情 - {filename}")
+                #  显示运动参数 (保持不变)
+                tk.Label(detail_window, text=f"日期时间: {selected_record_preview['datetime']}").pack(anchor="w")
+                tk.Label(detail_window, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
+                tk.Label(detail_window, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
+                tk.Label(detail_window, text=f"年龄: {selected_record_preview['age']}").pack(anchor="w")
+                
+                plt.rcParams['font.sans-serif'] = ['SimHei']  #  设置字体为 SimHei
+                plt.rcParams['axes.unicode_minus'] = False   #  解决负号显示为方块的问题 (可选，但建议添加)
+                
+                #  [修改 in treadmill_app.py 5]:  绘制心率折线图
+                timestamps = [float(row[0]) for row in exercise_data] #  <--- [修改 4.3] 提取时间戳数据 (转换为浮点数)
+                heart_rates = [int(row[1]) for row in exercise_data] #  <--- [修改 4.4] 提取心率数据 (转换为整数)
+                
+                fig, ax = plt.subplots(figsize=(8, 6)) #  <--- [修改 4.5] 创建 Figure 和 Axes 对象
+                ax.plot(timestamps, heart_rates) #  <--- [修改 4.6] 绘制折线图
+                
+                ax.set_xlabel("运动时间 (秒)") #  <--- [修改 4.7] 设置 X 轴标签
+                ax.set_ylabel("心率 (bpm)") #  <--- [修改 4.8] 设置 Y 轴标签
+                ax.set_title("运动心率变化图") #  <--- [修改 4.9] 设置图表标题
+                ax.grid(True) #  <--- [修改 4.10] 添加网格线
+                #  将 Matplotlib 图表嵌入 Tkinter 窗口
+
+                #  #  [修正 7.0] 设置 X 轴显示范围
+                # if timestamps: #  <--- [修正 7.1] 检查 timestamps 列表是否为空
+                #     max_elapsed_time = max(timestamps) #  <--- [修正 7.2] 获取最大经过时间
+                #     ax.set_xlim(0, max_elapsed_time * 1.1) #  <--- [修正 7.3] 设置 X 轴范围为 0 到 最大经过时间的 1.1 倍 (增加一些留白)
+                # else:
+                #     ax.set_xlim(0, 10) #  <--- [修正 7.4] 如果没有数据，设置一个默认的 X 轴范围 (0-10秒)
+                
+                canvas = FigureCanvasTkAgg(fig, master=detail_window) #  <--- [修改 4.11] 创建 FigureCanvasTkAgg 对象
+                canvas_widget = canvas.get_tk_widget() #  <--- [修改 4.12] 获取 Tkinter Widget
+                canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10) #  <--- [修改 4.13] 放置 Canvas Widget
+                canvas.draw() #  <--- [修改 4.14] 绘制图表
+
+                heart_rate_text = "心率数据 (前10个点):\n"
+                for i in range(min(10, len(exercise_data))):
+                    timestamp, heart_rate, *_ = exercise_data[i]
+                    heart_rate_text += f"  {i+1}. 时间: {timestamp}, 心率: {heart_rate} bpm\n"
+                tk.Label(detail_window, text=heart_rate_text, justify=tk.LEFT).pack(anchor="w")
+
+                #  [修正 5.0] 定义窗口关闭处理函数
+                def on_detail_window_close():
+                    plt.close(fig) #  <--- [修正 5.1] 显式关闭 matplotlib Figure
+                    detail_window.destroy() #  <--- [修正 5.2] 销毁 detail_window
+                detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close) #  <--- [修正 5.3]
+
 
 
 if __name__ == "__main__":
