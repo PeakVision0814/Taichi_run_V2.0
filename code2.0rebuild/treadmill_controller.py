@@ -132,20 +132,20 @@ class TreadmillController:
             self._update_ui_labels()
             self._start_post_exercise_heart_rate_collection()
 
-            session_data = self.heart_rate_collector.get_session_data() #  <--- [修改 1.5] 获取运动会话数据
-            level = self._get_selected_level() #  <--- [修改 1.6] 获取运动等级
-            lap_distance = self._get_lap_distance() #  <--- [修改 1.7] 获取圈程距离
-            age_str = self.age_entry.get() #  <--- [修改 1.8] 获取年龄
-            age = int(age_str) if age_str else 0 #  确保 age 是整数，即使 age_str 为空
+            session_data = self.heart_rate_collector.get_session_data() 
+            level = self._get_selected_level()
+            lap_distance = self._get_lap_distance() 
+            age_str = self.age_entry.get() 
+            age = int(age_str) if age_str else 0 
             exercise_duration_seconds = 0
             if self.exercise_start_time:
                 exercise_end_time = datetime.datetime.now()
-                exercise_duration_seconds = int((exercise_end_time - self.exercise_start_time).total_seconds()) #  <--- [修改 1.9] 计算运动时长
+                exercise_duration_seconds = int((exercise_end_time - self.exercise_start_time).total_seconds()) 
 
-            if session_data: #  <--- [修改 1.10] 检查是否有运动数据
-                timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S") #  <--- [修改 1.11] 生成基于开始时间的文件名
-                filename = f"heart_rate_log_{timestamp_str}.csv" #  <--- 修改为不包含 data/ 路径
-                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed) #  <--- [修改 1.13] 调用保存函数
+            if session_data:
+                timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S") 
+                filename = f"heart_rate_log_{timestamp_str}.csv" 
+                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed) 
                 print(f"运动数据已保存到: {filename}")
             else:
                 print("没有心率数据需要保存。")

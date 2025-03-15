@@ -84,10 +84,9 @@ def get_history_record_previews():
         try:
             return datetime.datetime.strptime(filename_datetime_str, "%Y%m%d-%H%M%S")
         except ValueError:
-            return datetime.datetime.min #  解析失败时返回最小值，使其排在最后
+            return datetime.datetime.min 
 
 
-    #  [修改 7.0] 对 preview_data 列表进行排序，按日期时间倒序排列
     preview_data_sorted = sorted(preview_data, key=get_datetime_from_filename, reverse=True)
     return preview_data_sorted
 
