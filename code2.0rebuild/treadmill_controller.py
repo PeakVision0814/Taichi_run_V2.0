@@ -23,17 +23,6 @@ def get_speed_levels(level):
 class TreadmillController:
     def __init__(self, treadmill_simulator, level_var, distance_entry,
                 current_speed_label, distance_label, lap_label):
-        """
-        初始化跑步机控制器。
-
-        Args:
-            treadmill_simulator: TreadmillSimulator 实例。
-            level_var: tkinter.StringVar 实例，用于获取选择的等级。
-            distance_entry: tkinter.Entry 实例，用于获取圈程距离。
-            current_speed_label: tkinter.Label 实例，用于显示当前速度。
-            distance_label: tkinter.Label 实例，用于显示运动距离。
-            lap_label: tkinter.Label 实例，用于显示当前圈程。
-        """
         self.simulator = treadmill_simulator
         self.level_var = level_var
         self.distance_entry = distance_entry
@@ -45,24 +34,23 @@ class TreadmillController:
         self.current_speed_index = 0
         self.lap_distance = 0
         self.laps_completed = 0
-        self.speed_update_interval = 1 # 秒，速度更新间隔
+        self.speed_update_interval = 1
         self.is_running = False
-        self.last_distance = 0 # 上一次更新速度时的距离
-        self.update_speed_after_lap_thread = None # 用于速度更新的线程
-        self.lock = threading.Lock() # 用于线程同步
+        self.last_distance = 0 
+        self.update_speed_after_lap_thread = None
+        self.lock = threading.Lock()
 
     def start_exercise(self):
-        """启动跑步机运动。"""
         if self.is_running:
-            return False # 避免重复启动
+            return False
 
         level = self._get_selected_level()
         if level is None:
-            return False # 如果等级无效，则不启动
+            return False 
 
         distance_per_lap = self._get_lap_distance()
         if distance_per_lap is None:
-            return False # 如果圈程距离无效，则不启动
+            return False 
 
         try:
             self.speed_levels = get_speed_levels(int(level))
@@ -84,48 +72,48 @@ class TreadmillController:
         initial_speed = self.speed_levels[0]
         self.simulator.set_speed(initial_speed)
         self.simulator.start()
-        self._update_ui_labels() # 立即更新UI
-        self._start_speed_update_thread() # 启动速度更新线程
+        self._update_ui_labels() 
+        self._start_speed_update_thread() 
         return True
 
     def stop_exercise(self):
-        """停止跑步机运动。"""
         if self.is_running:
             self.is_running = False
             self.simulator.stop()
             if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
-                self.update_speed_after_lap_thread.join(timeout=1) # 等待线程结束，设置超时时间防止阻塞
-            self._update_ui_labels() # 最后一次更新UI
+                self.update_speed_after_lap_thread.join(timeout=1) 
+            self._update_ui_labels()
 
     def _start_speed_update_thread(self):
-        """启动一个线程来定期检查距离并更新速度。"""
-        self.update_speed_after_lap_thread = threading.Thread(target=self._update_speed_after_lap, daemon=True) # 设置为守护线程
+        self.update_speed_after_lap_thread = threading.Thread(target=self._update_speed_after_lap, daemon=True) 
         self.update_speed_after_lap_thread.start()
 
     def _update_speed_after_lap(self):
-        """在后台线程中运行，定期检查距离并根据圈程更新速度。"""
         while self.is_running:
             time.sleep(self.speed_update_interval)
             current_distance = self.simulator.get_distance_covered()
             distance_since_last_update = current_distance - self.last_distance
 
             if distance_since_last_update >= self.lap_distance:
-                with self.lock: # 确保线程安全
+                with self.lock: 
                     self.laps_completed += 1
-                    self.last_distance = current_distance # 更新last_distance为当前距离，而不是 last_distance + lap_distance
+                    self.last_distance = current_distance 
                     self.current_speed_index += 1
                     if self.current_speed_index < len(self.speed_levels):
                         new_speed = self.speed_levels[self.current_speed_index]
                         self.simulator.set_speed(new_speed)
-                        print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h") # 调试信息
+                        print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h") 
                     else:
-                        print("速度列表已结束，保持当前速度。") # 调试信息
-                        self.is_running = False # 速度列表结束，停止运动或者保持最后速度，这里选择停止更新速度
+                        print("速度列表已结束，保持当前速度。")
+                        self.is_running = False 
+            self._schedule_ui_update()
 
-            self._update_ui_labels() # 每次循环都更新UI，保证数据实时性
+    def _schedule_ui_update(self):
+        if self.is_running: 
+            self.current_speed_label.after(0, self._update_ui_labels)
+
 
     def _update_ui_labels(self):
-        """更新UI上的速度、距离和圈程标签 (需要从主线程调用)。"""
         if not self.is_running:
             current_speed_text = "0.0 km/h"
         else:
@@ -136,17 +124,12 @@ class TreadmillController:
         distance_text = f"{distance_covered:.2f} 米"
         lap_text = f"{self.laps_completed} 圈"
 
-        # 使用 tkinter.Tk.after 将UI更新操作放入主线程队列
         self.current_speed_label.after(0, self.current_speed_label.config, {"text": current_speed_text})
         self.distance_label.after(0, self.distance_label.config, {"text": distance_text})
         self.lap_label.after(0, self.lap_label.config, {"text": lap_text})
 
-        if self.is_running:
-            self.current_speed_label.after(100, self._update_ui_labels) # 定期更新，例如每 100 毫秒
-
 
     def _get_selected_level(self):
-        """获取用户选择的运动等级，并进行校验。"""
         level_str = self.level_var.get()
         if not level_str:
             messagebox.showerror("错误", "请选择运动等级。")
@@ -157,7 +140,6 @@ class TreadmillController:
         return level_str
 
     def _get_lap_distance(self):
-        """获取用户输入的圈程距离，并进行校验。"""
         distance_str = self.distance_entry.get()
         if not distance_str:
             messagebox.showerror("错误", "请输入圈程距离。")
