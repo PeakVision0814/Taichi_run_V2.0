@@ -13,6 +13,7 @@ class HeartRateCollector:
         self.last_lap_average_rate = 0
         self.latest_heart_rate = 0
         self.current_session_data = []  #  <--- [修改 1] 初始化 current_session_data 列表
+        self.start_timestamp_unix = time.time()
 
     def start_collection(self):
         if not self.running:
@@ -24,11 +25,13 @@ class HeartRateCollector:
             self.running = False
 
     def _notify_listeners(self, heart_rate):
-        timestamp = time.time()  #  <--- [修改 3] 获取当前时间戳
+        timestamp_unix = time.time()  #  <--- [修改 3] 获取当前时间戳
+        relative_timestamp = timestamp_unix - self.start_timestamp_unix  # 计算相对时间戳
         self.heart_rates.append(heart_rate)
         self.current_lap_heart_rates.append(heart_rate)
         self.latest_heart_rate = heart_rate
-        self.current_session_data.append((timestamp, heart_rate)) #  <--- [修改 4] 存储 (时间戳, 心率) 元组
+        # self.current_session_data.append((relative_timestamp, heart_rate)) #  <--- 存储 (相对时间戳, 心率) 元组
+        self.current_session_data.append((relative_timestamp, heart_rate)) #  <--- [修改 4] 存储 (时间戳, 心率) 元组
         for listener in self.listeners:
             listener.on_heart_rate_received(heart_rate, self.get_average_heart_rate(), self.get_lap_average_heart_rate(), self.last_lap_average_rate)
 
