@@ -12,7 +12,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
 
         self.collector = collector
         self.collector.add_listener(self)
-
+        self.protocol("WM_DELETE_WINDOW", self.stop_app)
         self.treadmill_simulator = TreadmillSimulator()
 
         self.level_targets = {"2": 4000,
@@ -125,6 +125,18 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.stop_button.config(state=tk.DISABLED)
         # 调用 TreadmillController 的 stop_exercise 方法
         self.treadmill_controller.stop_exercise()
+
+    def stop_app(self):
+        """停止所有模拟器和线程，然后关闭应用"""
+        # 停止心率模拟器
+        if hasattr(self, 'heart_rate_simulator'): # 检查 simulator 是否已创建，避免启动前关闭报错
+            self.heart_rate_simulator.stop()
+        # 停止跑步机运动 (会停止跑步机模拟器和速度更新线程)
+        self.stop_treadmill() #  复用 stop_treadmill 方法来停止跑步机相关组件
+        # (可选) 停止心率数据收集器 -  如果 HeartRateCollector 也需要显式停止，可以在这里添加 self.collector.stop_collection()
+        # 关闭窗口
+        self.destroy()
+
 
 
 if __name__ == "__main__":
