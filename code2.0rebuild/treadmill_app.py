@@ -46,9 +46,9 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.target_label = tk.Label(self, text="无")
         self.target_label.grid(row=3, column=1, padx=10, pady=5)
 
-        self.start_button = tk.Button(self, text="开始运动", command=self.start_treadmill) 
+        self.start_button = tk.Button(self, text="开始运动", command=self.start_treadmill)
         self.start_button.grid(row=4, column=0, padx=10, pady=5)
-        self.stop_button = tk.Button(self, text="停止运动", command=self.stop_treadmill, state=tk.DISABLED) 
+        self.stop_button = tk.Button(self, text="停止运动", command=self.stop_treadmill, state=tk.DISABLED)
         self.stop_button.grid(row=4, column=1, padx=10, pady=5)
 
         tk.Label(self, text="当前心率:").grid(row=5, column=0, sticky="w", padx=10, pady=5)
@@ -66,7 +66,6 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5) # 原本 "当前速度" 是 row=8, 现在 "上圈平均心率" 放到 row=8
         self.last_lap_average_rate_label = tk.Label(self, text="0 bpm") # 上圈平均心率 label
         self.last_lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
-
 
         tk.Label(self, text="当前速度:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
         self.current_speed_label = tk.Label(self, text="0 m/s")
@@ -87,22 +86,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
         open_ui_button.grid(row=13, column=0, columnspan=2, pady=10)
 
-        self.treadmill_controller = TreadmillController( 
+        self.treadmill_controller = TreadmillController(
             self.treadmill_simulator,
             self.level_var,
             self.distance_entry,
-            self.current_speed_label, 
-            self.distance_label, 
+            self.current_speed_label,
+            self.distance_label,
             self.lap_label,
             self.on_exercise_completion,
             collector
         )
 
-        self.start_time = None 
-        self.elapsed_time = 0 
-        self.timer_running = False 
-        self.timer_id = None     
-    
+        self.start_time = None
+        self.elapsed_time = 0
+        self.timer_running = False
+        self.timer_id = None
+        self.is_exercising = False  #  <---  [修改 1] 初始化运动状态标记为 False
+
+
     def update_target(self, event):
         """根据选择的等级更新目标"""
         level = self.level_var.get()
@@ -116,10 +117,12 @@ class TreadmillApp(tk.Tk, HeartRateListener):
 
 
     def _update_heart_rate_label(self, heart_rate, average_heart_rate, lap_average_heart_rate, last_lap_average_rate): # 更新方法签名
-        self.current_rate_label.config(text=f"{heart_rate} bpm")
-        self.average_rate_label.config(text=f"{average_heart_rate:.1f} bpm") # 显示一位小数
-        self.lap_average_rate_label.config(text=f"{lap_average_heart_rate:.1f} bpm") # 显示一位小数
-        self.last_lap_average_rate_label.config(text=f"{last_lap_average_rate:.1f} bpm") # 更新上圈平均心率 label, 显示一位小数
+        self.current_rate_label.config(text=f"{heart_rate} bpm") #  当前心率始终更新
+
+        if self.is_exercising: #  <---  [修改 4] 只有在运动进行时才更新平均心率相关标签
+            self.average_rate_label.config(text=f"{average_heart_rate:.1f} bpm")
+            self.lap_average_rate_label.config(text=f"{lap_average_heart_rate:.1f} bpm")
+            self.last_lap_average_rate_label.config(text=f"{last_lap_average_rate:.1f} bpm")
 
 
     def open_heart_rate_ui(self):
@@ -132,10 +135,11 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
             self.distance_label.config(text="0 米")
-            self.start_time = time.time()  
-            self.elapsed_time = 0    
-            self.timer_running = True   
-            self.update_timer()          
+            self.start_time = time.time()
+            self.elapsed_time = 0
+            self.timer_running = True
+            self.update_timer()
+            self.is_exercising = True  #  <---  [修改 2] 设置运动状态为 True，表示运动开始
 
 
     def stop_treadmill(self):
@@ -143,19 +147,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.stop_button.config(state=tk.DISABLED)
         self.treadmill_controller.stop_exercise()
         self.stop_timer() # 停止定时器
+        self.is_exercising = False  #  <---  [修改 3] 设置运动状态为 False，表示运动结束
+        self.average_rate_label.config(text="0 bpm")       #  <---  [修改 3] 重置平均心率显示
+        self.lap_average_rate_label.config(text="0 bpm")   #  <---  [修改 3] 重置本圈平均心率显示
+        self.last_lap_average_rate_label.config(text="0 bpm") # <---  [修改 3] 重置上圈平均心率显示
+
 
     def stop_timer(self):
         """停止计时器"""
         if self.timer_running:
             self.timer_running = False
             if self.timer_id is not None:
-                self.after_cancel(self.timer_id) 
+                self.after_cancel(self.timer_id)
                 self.timer_id = None
     def update_timer(self):
         """更新时间标签"""
         if self.timer_running:
             current_time = time.time()
-            self.elapsed_time = int(current_time - self.start_time) 
+            self.elapsed_time = int(current_time - self.start_time)
             time_str = self.format_time(self.elapsed_time)
             self.time_label.config(text=time_str)
             self.timer_id = self.after(1000, self.update_timer)
@@ -163,7 +172,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         """将秒数格式化为 分:秒 形式"""
         minutes = seconds // 60
         secs = seconds % 60
-        return "{:02d}:{:02d}".format(minutes, secs) 
+        return "{:02d}:{:02d}".format(minutes, secs)
 
     def stop_app(self):
         if hasattr(self, 'heart_rate_simulator'):
