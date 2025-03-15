@@ -80,19 +80,7 @@ class TreadmillSimulator:
         return current_time - last_time
 
     def _calculate_distance(self, elapsed_time):
-        """
-        根据速度和经过时间计算跑过的距离（米）。
-
-        参数:
-            elapsed_time (float): 经过的时间 (秒)。
-
-        返回值:
-            float: 跑过的距离 (米)。
-        """
         return self.current_speed * elapsed_time * (1000.0 / 3600.0)
-
-    # def _convert_hours_to_seconds(self, elapsed_time):
-    #     return (self.current_speed * 1000) * (elapsed_time / 3600)
 
     def get_elapsed_time(self):
         return self._calculate_elapsed_time_since_start() if self.start_time else 0
