@@ -86,7 +86,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             self.distance_entry,
             self.current_speed_label, 
             self.distance_label, 
-            self.lap_label           
+            self.lap_label,
+            self.on_exercise_completion  # 传递回调参数
         )
     
     def update_target(self, event):
@@ -137,6 +138,13 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         # 关闭窗口
         self.destroy()
 
+    def on_exercise_completion(self):
+        """运动完成时被 TreadmillController 调用的回调函数"""
+        print("TreadmillApp: on_exercise_completion() called") # 调试信息
+        # 启用开始按钮，禁用停止按钮，与 stop_treadmill 方法中做的操作相同
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        print("TreadmillApp: on_exercise_completion() - Button states set: 开始运动 NORMAL, 停止运动 DISABLED") # 调试信息
 
 
 if __name__ == "__main__":
