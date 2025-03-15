@@ -39,6 +39,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         tk.Label(self, text="圈程距离(米):").grid(row=2, column=0, sticky="w", padx=10, pady=5)
         self.distance_entry = tk.Entry(self)
         self.distance_entry.grid(row=2, column=1, padx=10, pady=5)
+        self.distance_entry.insert(0, "200")
 
         tk.Label(self, text="目标:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
         self.target_label = tk.Label(self, text="无")
@@ -73,7 +74,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.distance_label = tk.Label(self, text="0 米")
         self.distance_label.grid(row=10, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="当前圈程:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="完成圈程:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
         self.lap_label = tk.Label(self, text="0 圈")
         self.lap_label.grid(row=11, column=1, padx=10, pady=5)
 
@@ -109,42 +110,26 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         HeartRateUI(heart_rate_ui_window, self.collector)
 
     def start_treadmill(self):
-        # 调用 TreadmillController 的 start_exercise 方法，并获取返回值
         start_success = self.treadmill_controller.start_exercise()
-        # 检查返回值，只有启动成功才改变按钮状态
         if start_success:
-            # 禁用开始按钮，启用停止按钮
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
-            # 重置运动距离显示为 0 米 (保持不变)
             self.distance_label.config(text="0 米")
-        # 如果启动失败 (start_success 为 False)，则按钮状态保持不变，让用户可以修改输入并重试
 
     def stop_treadmill(self):
-        # 启用开始按钮，禁用停止按钮
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
-        # 调用 TreadmillController 的 stop_exercise 方法
         self.treadmill_controller.stop_exercise()
 
     def stop_app(self):
-        """停止所有模拟器和线程，然后关闭应用"""
-        # 停止心率模拟器
-        if hasattr(self, 'heart_rate_simulator'): # 检查 simulator 是否已创建，避免启动前关闭报错
+        if hasattr(self, 'heart_rate_simulator'):
             self.heart_rate_simulator.stop()
-        # 停止跑步机运动 (会停止跑步机模拟器和速度更新线程)
-        self.stop_treadmill() #  复用 stop_treadmill 方法来停止跑步机相关组件
-        # (可选) 停止心率数据收集器 -  如果 HeartRateCollector 也需要显式停止，可以在这里添加 self.collector.stop_collection()
-        # 关闭窗口
+        self.stop_treadmill()
         self.destroy()
 
     def on_exercise_completion(self):
-        """运动完成时被 TreadmillController 调用的回调函数"""
-        print("TreadmillApp: on_exercise_completion() called") # 调试信息
-        # 启用开始按钮，禁用停止按钮，与 stop_treadmill 方法中做的操作相同
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
-        print("TreadmillApp: on_exercise_completion() - Button states set: 开始运动 NORMAL, 停止运动 DISABLED") # 调试信息
 
 
 if __name__ == "__main__":
