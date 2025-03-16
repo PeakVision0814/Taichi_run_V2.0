@@ -2,13 +2,16 @@
 import tkinter as tk
 import time
 import matplotlib.pyplot as plt
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 from heart_rate_collector import HeartRateCollector, HeartRateListener
 from heart_rate_ui import HeartRateUI
 from treadmill_simulator import TreadmillSimulator
 from treadmill_controller import TreadmillController
 from exercise_data_manager import get_history_record_previews, load_exercise_data
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from openai import OpenAI
+import threading
+
 
 class TreadmillApp(tk.Tk, HeartRateListener):
     def __init__(self, collector):
@@ -115,14 +118,15 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.timer_running = False
         self.timer_id = None
         self.is_exercising = False
-        self.record_feedbacks = {} # 用于存储每个记录的反馈
-        self.feedback_static_text = { #  [修改 4.1] 定义反馈选项和对应的静态文本
+        self.record_feedbacks = {}
+        self.feedback_static_text = {
             "过于轻松": "这次运动感觉非常轻松，可以尝试提高跑步等级或增加运动强度！",
             "舒适": "运动强度适中，状态良好，继续保持！",
             "一般": "运动强度还可以，但可以尝试挑战更高目标！",
             "难受": "感觉有些吃力了，注意调整呼吸和节奏，必要时降低强度。",
             "难以承受": "运动强度过大，身体负荷过重，请立即停止并降低等级！"
         }
+        self.openai_client = None
 
 
     def update_target(self, event):
@@ -237,11 +241,32 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 tk.Label(detail_window, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
                 tk.Label(detail_window, text=f"年龄: {selected_record_preview['age']}").pack(anchor="w")
 
+                duration_seconds_str = selected_record_preview.get('duration_seconds', '0')
+                exercise_distance_str = selected_record_preview.get('exercise_distance', '0')
+                try:
+                    duration_seconds = int(duration_seconds_str)
+                    exercise_distance = float(exercise_distance_str)
+                except ValueError:
+                    duration_seconds = 0
+                    exercise_distance = 0
+
+                heart_rates = [int(row[1]) for row in exercise_data]
+                average_heart_rate = sum(heart_rates) / len(heart_rates) if heart_rates else 0
+
+                minutes = duration_seconds // 60
+                seconds = duration_seconds % 60
+                formatted_duration = f"{minutes:02d}:{seconds:02d}"
+
+                tk.Label(detail_window, text=f"运动时长: {formatted_duration}").pack(anchor="w")
+                tk.Label(detail_window, text=f"运动距离: {exercise_distance:.2f} 米").pack(anchor="w")
+                tk.Label(detail_window, text=f"平均心率: {average_heart_rate:.1f} bpm").pack(anchor="w")
+
+
                 plt.rcParams['font.sans-serif'] = ['SimHei']
                 plt.rcParams['axes.unicode_minus'] = False
 
                 timestamps = [float(row[0]) for row in exercise_data]
-                heart_rates = [int(row[1]) for row in exercise_data]
+
 
                 fig, ax = plt.subplots(figsize=(8, 6))
                 ax.plot(timestamps, heart_rates)
@@ -271,37 +296,111 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 feedback_frame.pack(pady=10)
 
                 feedback_labels = ["过于轻松", "舒适", "一般", "难受", "难以承受"]
-                self.recommendation_label = tk.Label(detail_window, text="", pady=10) #  [修改 4.2] 在 `__init__` 外部创建 recommendation_label
+                self.recommendation_label = tk.Label(detail_window, text="", pady=10)
 
                 def record_feedback(feedback_value, current_filename=filename, current_preview=selected_record_preview):
-                    self.record_feedbacks[current_filename] = feedback_value # 存储反馈
-                    current_preview['feedback'] = feedback_value # 同时更新 preview 数据
-                    update_recommendation_text(feedback_value) #  [修改 4.3] 调用 update_recommendation_text 并传入 feedback_value
+                    self.record_feedbacks[current_filename] = feedback_value
+                    current_preview['feedback'] = feedback_value
+                    update_recommendation_text(feedback_value)
 
                 for i, label_text in enumerate(feedback_labels):
                     btn = tk.Button(feedback_frame, text=label_text, command=lambda text=label_text: record_feedback(text))
                     btn.pack(side=tk.LEFT, padx=5)
-                    if i == 2: #  [修改 4.4] 将 recommendation_label 放在 "一般" 按钮后面，更符合视觉顺序
-                        self.recommendation_label.pack(side=tk.LEFT, padx=10) #  显示推荐文本
+                    if i == 2:
+                        self.recommendation_label.pack(padx=10)
 
 
-                def update_recommendation_text(feedback_value): #  [修改 4.5] 修改 update_recommendation_text 只接收 feedback_value
-                    if feedback_value in self.feedback_static_text: #  [修改 4.6] 根据 feedback_value 从字典中获取静态文本
-                        self.recommendation_label.config(text=self.feedback_static_text[feedback_value]) #  [修改 4.7] 设置 recommendation_label 的文本为静态文本
+                def update_recommendation_text(feedback_value):
+                    if feedback_value in self.feedback_static_text:
+                        self.recommendation_label.config(text=self.feedback_static_text[feedback_value])
                     else:
-                        self.recommendation_label.config(text="") #  [修改 4.8]  如果 feedback_value 无效，则清空文本
+                        self.recommendation_label.config(text="")
 
-
-                # 尝试恢复之前的反馈和更新推荐文本
                 if 'feedback' in selected_record_preview and selected_record_preview['feedback']:
-                    record_feedback(selected_record_preview['feedback']) # 恢复反馈
-                # update_recommendation_text(history_previews, selected_index) #  [修改 4.9]  移除不再需要的调用，静态文本在点击按钮时更新
+                    record_feedback(selected_record_preview['feedback'])
 
+                if not self.openai_client:
+                    try:
+                        self.openai_client = OpenAI(api_key="sk-qydfmsqjvccqxrcijqenzwugckjrrtdttyfgvfmewdslvpmr", base_url="https://api.siliconflow.cn/v1")
+                    except Exception as e:
+                        messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
+                        self.ai_analysis_text = tk.Text(detail_window, height=5, width=60, wrap=tk.WORD)
+                        self.ai_analysis_text.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+                        self.ai_analysis_text.insert(tk.END, "OpenAI API 初始化失败，无法进行AI分析。请检查 API Key 和网络连接。\n")
+                        self.ai_analysis_text.config(state=tk.DISABLED)
+                        return
+
+                self.ai_analysis_text = tk.Text(detail_window, height=10, width=60, wrap=tk.WORD)
+                self.ai_analysis_text.pack(pady=10, padx=10, fill=tk.BOTH, expand=True,after=self.recommendation_label)
+                self.ai_analysis_text.insert(tk.END, "正在分析中，请稍候...\n")
+                self.ai_analysis_text.config(state=tk.DISABLED)
+
+                #  [修改 9.1]  将 CSV 数据转换为字符串
+                csv_data_string = ""
+                for row in exercise_data:
+                    csv_data_string += ",".join(map(str, row)) + "\n" # 每行数据用逗号分隔，行之间用换行符分隔
+
+
+                prompt_content = f"""
+这是一份太极式健身跑的心率记录，请分析用户的运动心率数据，数据以 CSV 格式提供，包含时间戳 (秒) 和心率值 (bpm) 两列。
+
+运动时长: {formatted_duration}
+运动距离: {exercise_distance:.2f} 米
+平均心率: {average_heart_rate:.1f} bpm
+
+CSV 格式的心率数据:
+{csv_data_string}
+
+请根据以上数据，提供一份详细的运动分析报告。
+分析报告应该包括以下几个方面:
+- 总体运动强度评估 (例如: 偏低, 适中, 偏高)。
+- 心率在运动过程中的详细变化趋势分析 (例如:  更精细地描述心率的波动情况，峰值和谷值出现的时间点，心率恢复速度等，基于 CSV 数据进行分析)。
+- 基于详细的心率数据，更深入地评价本次运动效果，并给出更个性化的建议 (例如:  更具体地指出运动强度不足或过高的时间段，更精确地评估心率恢复情况，给出更贴合用户实际情况的运动建议)。
+- 更具体的运动建议 (例如:  如果运动强度偏低，建议提高多少速度或坡度; 如果心率波动大，建议如何调整呼吸和节奏;  针对心率恢复情况给出建议，例如运动后拉伸或放松)。
+
+注意事项：
+输出的语气需要元气满满的
+最后为用户给出一句加油的话语
+请输出纯text文本
+不要分段
+
+请使用中文生成 150 字左右的详细分析报告。
+                """
+
+                def call_openai_api(prompt):
+                    try:
+                        response = self.openai_client.chat.completions.create(
+                            model='Qwen/Qwen2.5-7B-Instruct',
+                            messages=[{'role': 'user', 'content': prompt}],
+                            stream=False
+                        )
+                        ai_response_text = response.choices[0].message.content
+                        if ai_response_text:
+                            display_ai_analysis_result(ai_response_text)
+                        else:
+                            display_ai_analysis_result("AI 分析未能生成有效结果。")
+                    except Exception as api_error:
+                        display_ai_analysis_result(f"调用 AI API 出错: {api_error}")
+
+                def display_ai_analysis_result(analysis_text):
+                    detail_window.after(0, lambda text=analysis_text: _update_text(text))
+
+                def _update_text(text):
+                    self.ai_analysis_text.config(state=tk.NORMAL)
+                    self.ai_analysis_text.delete("1.0", tk.END)
+                    self.ai_analysis_text.insert(tk.END, text)
+                    self.ai_analysis_text.config(state=tk.DISABLED)
+
+
+                threading.Thread(target=call_openai_api, args=(prompt_content,), daemon=True).start()
 
                 def on_detail_window_close():
                     plt.close(fig)
                     detail_window.destroy()
                 detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close)
+
+# ... (TreadmillApp 类的其他部分和 if __name__ == "__main__": 部分保持不变)
+
 
 
 if __name__ == "__main__":
