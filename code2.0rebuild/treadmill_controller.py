@@ -111,8 +111,8 @@ class TreadmillController:
         if self.is_running:
             self.is_running = False
             self.simulator.stop()
-            if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
-                self.update_speed_after_lap_thread.join(timeout=1)
+            # if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
+                # self.update_speed_after_lap_thread.join(timeout=1)
             self._update_ui_labels()
             self._start_post_exercise_heart_rate_collection()
 
@@ -196,7 +196,7 @@ class TreadmillController:
                             reduction_type = "大降速"
                         if new_speed < 3.5:
                             new_speed = 0.0
-                            self.is_running = False
+                            # self.is_running = False
                             self._exercise_completed(reason="heart_rate_stop")
                             print(f"{reduction_type}, 速度降至低于3.5km/h，运动停止。")
                         else:
@@ -210,7 +210,7 @@ class TreadmillController:
                             print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h, 本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
                         else:
                             print("速度列表已结束，停止运动。")
-                            self.is_running = False
+                            # self.is_running = False
                             self._exercise_completed()
             self._schedule_ui_update()
 
