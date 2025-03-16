@@ -2,8 +2,8 @@
 import time
 import threading
 from tkinter import messagebox
-import datetime 
-from exercise_data_manager import save_exercise_data 
+import datetime
+from exercise_data_manager import save_exercise_data
 from speed_config import SPEED_LEVELS, get_speed_levels
 
 class TreadmillController:
@@ -46,7 +46,8 @@ class TreadmillController:
         self.reduction_stage = "small"
         self.post_exercise_heart_rates = []
         self.post_exercise_collection_active = False
-        self.exercise_start_time = None #  <--- [修改 1.3] 添加 exercise_start_time 属性
+        self.exercise_start_time = None
+        self.total_distance_meters = 0.0 #  [修改 5.21] 初始化 total_distance_meters
 
 
     def start_exercise(self):
@@ -96,8 +97,8 @@ class TreadmillController:
         self.reduction_counter = 0
         self.reduction_stage = "small"
         self.post_exercise_collection_active = False
-        self.exercise_start_time = datetime.datetime.now() 
-
+        self.exercise_start_time = datetime.datetime.now()
+        self.total_distance_meters = 0.0 #  [修改 5.22] 重置 total_distance_meters
 
         self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
@@ -111,25 +112,24 @@ class TreadmillController:
         if self.is_running:
             self.is_running = False
             self.simulator.stop()
-            # if self.update_speed_after_lap_thread and self.update_speed_after_lap_thread.is_alive():
-                # self.update_speed_after_lap_thread.join(timeout=1)
             self._update_ui_labels()
             self._start_post_exercise_heart_rate_collection()
 
-            session_data = self.heart_rate_collector.get_session_data() 
+            session_data = self.heart_rate_collector.get_session_data()
             level = self._get_selected_level()
-            lap_distance = self._get_lap_distance() 
-            age_str = self.age_entry.get() 
-            age = int(age_str) if age_str else 0 
+            lap_distance = self._get_lap_distance()
+            age_str = self.age_entry.get()
+            age = int(age_str) if age_str else 0
             exercise_duration_seconds = 0
             if self.exercise_start_time:
                 exercise_end_time = datetime.datetime.now()
-                exercise_duration_seconds = int((exercise_end_time - self.exercise_start_time).total_seconds()) 
+                exercise_duration_seconds = int((exercise_end_time - self.exercise_start_time).total_seconds())
 
             if session_data:
-                timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S") 
-                filename = f"heart_rate_log_{timestamp_str}.csv" 
-                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed) 
+                timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S")
+                filename = f"heart_rate_log_{timestamp_str}.csv"
+                #  [修改 5.23]  在 save_exercise_data 中传递 self.total_distance_meters
+                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed, self.total_distance_meters) #  传递 total_distance_meters
                 print(f"运动数据已保存到: {filename}")
             else:
                 print("没有心率数据需要保存。")
@@ -196,7 +196,6 @@ class TreadmillController:
                             reduction_type = "大降速"
                         if new_speed < 3.5:
                             new_speed = 0.0
-                            # self.is_running = False
                             self._exercise_completed(reason="heart_rate_stop")
                             print(f"{reduction_type}, 速度降至低于3.5km/h，运动停止。")
                         else:
@@ -210,9 +209,18 @@ class TreadmillController:
                             print(f"完成圈程 {self.laps_completed}, 速度调整为 {new_speed} km/h, 本圈平均心率{lap_average_heart_rate:.1f}bpm，阈值{self.heart_rate_threshold:.1f}bpm")
                         else:
                             print("速度列表已结束，停止运动。")
-                            # self.is_running = False
                             self._exercise_completed()
+            self._update_distance_label() #  [修改 5.24] 调用 _update_distance_label
             self._schedule_ui_update()
+
+
+    def _update_distance_label(self): #  [修改 5.25] 新增 _update_distance_label 函数
+        if self.is_running:
+            distance_covered = self.simulator.get_distance_covered()
+            self.total_distance_meters = distance_covered #  更新 total_distance_meters
+            distance_text = f"{distance_covered:.2f} 米"
+            self.distance_label.after(0, self.distance_label.config, {"text": distance_text})
+
 
     def _exercise_completed(self, reason = None):
         level = self._get_selected_level()
@@ -277,9 +285,6 @@ class TreadmillController:
             if distance <= 0:
                 messagebox.showerror("错误", "圈程距离必须是正数。")
                 return None
-            # if distance < 50:
-                # messagebox.showerror("错误", "圈程距离必须大于等于50米。")
-                # return None
             return distance
         except ValueError:
             messagebox.showerror("错误", "圈程距离必须是数字。")
