@@ -96,7 +96,7 @@ class TreadmillController:
         self.reduction_counter = 0
         self.reduction_stage = "small"
         self.post_exercise_collection_active = False
-        self.exercise_start_time = datetime.datetime.now() #  <--- [修改 1.4] 记录运动开始时间
+        self.exercise_start_time = datetime.datetime.now() 
 
 
         self.simulator.distance_covered = 0.0
@@ -277,9 +277,9 @@ class TreadmillController:
             if distance <= 0:
                 messagebox.showerror("错误", "圈程距离必须是正数。")
                 return None
-            if distance < 50:
-                messagebox.showerror("错误", "圈程距离必须大于等于50米。")
-                return None
+            # if distance < 50:
+                # messagebox.showerror("错误", "圈程距离必须大于等于50米。")
+                # return None
             return distance
         except ValueError:
             messagebox.showerror("错误", "圈程距离必须是数字。")

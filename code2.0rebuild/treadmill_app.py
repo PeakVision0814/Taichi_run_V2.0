@@ -236,6 +236,17 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 
                 fig, ax = plt.subplots(figsize=(8, 6)) 
                 ax.plot(timestamps, heart_rates) 
+
+                try:
+                    age = int(selected_record_preview['age'])
+                    max_heart_rate = 220 - age
+                    threshold_80_percent = max_heart_rate * 0.8
+                except (ValueError, KeyError):
+                    threshold_80_percent = None
+
+                if threshold_80_percent is not None: 
+                    ax.axhline(y=threshold_80_percent, color='r', linestyle='--', label=f'最大心率80%阈值 ({threshold_80_percent:.0f} bpm)') 
+                    ax.legend()
                 
                 ax.set_xlabel("运动时间 (秒)") 
                 ax.set_ylabel("心率 (bpm)") 
