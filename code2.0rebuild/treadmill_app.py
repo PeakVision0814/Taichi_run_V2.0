@@ -94,8 +94,8 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
         open_ui_button.grid(row=14, column=0, columnspan=2, pady=10)
 
-        history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record) 
-        history_button.grid(row=15, column=0, columnspan=2, pady=10) 
+        history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record)
+        history_button.grid(row=15, column=0, columnspan=2, pady=10)
 
         self.treadmill_controller = TreadmillController(
             self.treadmill_simulator,
@@ -115,6 +115,15 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.timer_running = False
         self.timer_id = None
         self.is_exercising = False
+        self.record_feedbacks = {} # 用于存储每个记录的反馈
+        self.feedback_static_text = { #  [修改 4.1] 定义反馈选项和对应的静态文本
+            "过于轻松": "这次运动感觉非常轻松，可以尝试提高跑步等级或增加运动强度！",
+            "舒适": "运动强度适中，状态良好，继续保持！",
+            "一般": "运动强度还可以，但可以尝试挑战更高目标！",
+            "难受": "感觉有些吃力了，注意调整呼吸和节奏，必要时降低强度。",
+            "难以承受": "运动强度过大，身体负荷过重，请立即停止并降低等级！"
+        }
+
 
     def update_target(self, event):
         level = self.level_var.get()
@@ -192,24 +201,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
 
-    def open_history_record(self): 
+    def open_history_record(self):
         history_window = tk.Toplevel(self)
         history_window.title("历史跑步记录")
-        history_previews = get_history_record_previews() 
+        history_previews = get_history_record_previews()
 
-        if not history_previews: 
+        if not history_previews:
             tk.Label(history_window, text="没有历史跑步记录").pack(padx=20, pady=20)
             return
 
         listbox = tk.Listbox(history_window, width=80)
         listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        for preview in history_previews: 
-            display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}" 
-            listbox.insert(tk.END, display_text) 
-            listbox.itemconfig(tk.END, fg="blue") 
+        for preview in history_previews:
+            display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}"
+            listbox.insert(tk.END, display_text)
+            listbox.itemconfig(tk.END, fg="blue")
 
-        listbox.bind("<Double-Button-1>", lambda event: self.show_history_detail(history_previews, listbox.curselection())) 
+        listbox.bind("<Double-Button-1>", lambda event: self.show_history_detail(history_previews, listbox.curselection()))
 
     def show_history_detail(self, history_previews, selection_indices):
         if not selection_indices:
@@ -227,15 +236,15 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 tk.Label(detail_window, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
                 tk.Label(detail_window, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
                 tk.Label(detail_window, text=f"年龄: {selected_record_preview['age']}").pack(anchor="w")
-                
-                plt.rcParams['font.sans-serif'] = ['SimHei'] 
-                plt.rcParams['axes.unicode_minus'] = False   
-                
+
+                plt.rcParams['font.sans-serif'] = ['SimHei']
+                plt.rcParams['axes.unicode_minus'] = False
+
                 timestamps = [float(row[0]) for row in exercise_data]
-                heart_rates = [int(row[1]) for row in exercise_data] 
-                
-                fig, ax = plt.subplots(figsize=(8, 6)) 
-                ax.plot(timestamps, heart_rates) 
+                heart_rates = [int(row[1]) for row in exercise_data]
+
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.plot(timestamps, heart_rates)
 
                 try:
                     age = int(selected_record_preview['age'])
@@ -244,32 +253,55 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 except (ValueError, KeyError):
                     threshold_80_percent = None
 
-                if threshold_80_percent is not None: 
-                    ax.axhline(y=threshold_80_percent, color='r', linestyle='--', label=f'最大心率80%阈值 ({threshold_80_percent:.0f} bpm)') 
+                if threshold_80_percent is not None:
+                    ax.axhline(y=threshold_80_percent, color='r', linestyle='--', label=f'最大心率80%阈值 ({threshold_80_percent:.0f} bpm)')
                     ax.legend()
-                
-                ax.set_xlabel("运动时间 (秒)") 
-                ax.set_ylabel("心率 (bpm)") 
-                ax.set_title("运动心率变化图") 
-                ax.grid(True) 
-                
-                canvas = FigureCanvasTkAgg(fig, master=detail_window) 
-                canvas_widget = canvas.get_tk_widget() 
-                canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10) 
-                canvas.draw() 
 
-                # heart_rate_text = "心率数据 (前10个点):\n"
-                # for i in range(min(10, len(exercise_data))):
-                #     timestamp, heart_rate, *_ = exercise_data[i]
-                #     heart_rate_text += f"  {i+1}. 时间: {timestamp}, 心率: {heart_rate} bpm\n"
-                # tk.Label(detail_window, text=heart_rate_text, justify=tk.LEFT).pack(anchor="w")
+                ax.set_xlabel("运动时间 (秒)")
+                ax.set_ylabel("心率 (bpm)")
+                ax.set_title("运动心率变化图")
+                ax.grid(True)
+
+                canvas = FigureCanvasTkAgg(fig, master=detail_window)
+                canvas_widget = canvas.get_tk_widget()
+                canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+                canvas.draw()
+
+                feedback_frame = tk.Frame(detail_window)
+                feedback_frame.pack(pady=10)
+
+                feedback_labels = ["过于轻松", "舒适", "一般", "难受", "难以承受"]
+                self.recommendation_label = tk.Label(detail_window, text="", pady=10) #  [修改 4.2] 在 `__init__` 外部创建 recommendation_label
+
+                def record_feedback(feedback_value, current_filename=filename, current_preview=selected_record_preview):
+                    self.record_feedbacks[current_filename] = feedback_value # 存储反馈
+                    current_preview['feedback'] = feedback_value # 同时更新 preview 数据
+                    update_recommendation_text(feedback_value) #  [修改 4.3] 调用 update_recommendation_text 并传入 feedback_value
+
+                for i, label_text in enumerate(feedback_labels):
+                    btn = tk.Button(feedback_frame, text=label_text, command=lambda text=label_text: record_feedback(text))
+                    btn.pack(side=tk.LEFT, padx=5)
+                    if i == 2: #  [修改 4.4] 将 recommendation_label 放在 "一般" 按钮后面，更符合视觉顺序
+                        self.recommendation_label.pack(side=tk.LEFT, padx=10) #  显示推荐文本
+
+
+                def update_recommendation_text(feedback_value): #  [修改 4.5] 修改 update_recommendation_text 只接收 feedback_value
+                    if feedback_value in self.feedback_static_text: #  [修改 4.6] 根据 feedback_value 从字典中获取静态文本
+                        self.recommendation_label.config(text=self.feedback_static_text[feedback_value]) #  [修改 4.7] 设置 recommendation_label 的文本为静态文本
+                    else:
+                        self.recommendation_label.config(text="") #  [修改 4.8]  如果 feedback_value 无效，则清空文本
+
+
+                # 尝试恢复之前的反馈和更新推荐文本
+                if 'feedback' in selected_record_preview and selected_record_preview['feedback']:
+                    record_feedback(selected_record_preview['feedback']) # 恢复反馈
+                # update_recommendation_text(history_previews, selected_index) #  [修改 4.9]  移除不再需要的调用，静态文本在点击按钮时更新
 
 
                 def on_detail_window_close():
-                    plt.close(fig) 
-                    detail_window.destroy() 
-                detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close) 
-
+                    plt.close(fig)
+                    detail_window.destroy()
+                detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close)
 
 
 if __name__ == "__main__":
