@@ -247,11 +247,11 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10) 
                 canvas.draw() 
 
-                heart_rate_text = "心率数据 (前10个点):\n"
-                for i in range(min(10, len(exercise_data))):
-                    timestamp, heart_rate, *_ = exercise_data[i]
-                    heart_rate_text += f"  {i+1}. 时间: {timestamp}, 心率: {heart_rate} bpm\n"
-                tk.Label(detail_window, text=heart_rate_text, justify=tk.LEFT).pack(anchor="w")
+                # heart_rate_text = "心率数据 (前10个点):\n"
+                # for i in range(min(10, len(exercise_data))):
+                #     timestamp, heart_rate, *_ = exercise_data[i]
+                #     heart_rate_text += f"  {i+1}. 时间: {timestamp}, 心率: {heart_rate} bpm\n"
+                # tk.Label(detail_window, text=heart_rate_text, justify=tk.LEFT).pack(anchor="w")
 
 
                 def on_detail_window_close():
