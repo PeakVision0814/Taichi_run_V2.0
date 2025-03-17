@@ -1,6 +1,6 @@
 # heart_rate_ui.py
 import tkinter as tk
-from heart_rate_simulator import HeartRateSimulator
+from simulator.heart_rate_simulator import HeartRateSimulator
 
 class HeartRateUI:
     def __init__(self, root, collector):

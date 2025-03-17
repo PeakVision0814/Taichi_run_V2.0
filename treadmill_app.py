@@ -3,11 +3,11 @@ import tkinter as tk
 import time
 import matplotlib.pyplot as plt
 from tkinter import ttk, filedialog, messagebox
-from heart_rate_collector import HeartRateCollector, HeartRateListener
-from heart_rate_ui import HeartRateUI
-from treadmill_simulator import TreadmillSimulator
-from treadmill_controller import TreadmillController
-from exercise_data_manager import get_history_record_previews, load_exercise_data
+from core.heart_rate_collector import HeartRateCollector, HeartRateListener
+from ui_elements.heart_rate_ui import HeartRateUI
+from simulator.treadmill_simulator import TreadmillSimulator
+from core.treadmill_controller import TreadmillController
+from core.exercise_data_manager import get_history_record_previews, load_exercise_data
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import OpenAI
 import threading

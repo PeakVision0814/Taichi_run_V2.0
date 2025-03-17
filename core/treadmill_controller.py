@@ -3,8 +3,8 @@ import time
 import threading
 from tkinter import messagebox
 import datetime
-from exercise_data_manager import save_exercise_data
-from speed_config import SPEED_LEVELS, get_speed_levels
+from core.exercise_data_manager import save_exercise_data
+from core.speed_config import SPEED_LEVELS, get_speed_levels
 
 class TreadmillController:
     def __init__(self,
