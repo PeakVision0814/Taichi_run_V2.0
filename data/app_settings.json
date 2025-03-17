@@ -1,4 +1,5 @@
 {
+    "settings_file_path": "data/app_settings.json",
     "default_lap_distance": 200,
     "api_key": "sk-qydfmsqjvccqxrcijqenzwugckjrrtdttyfgvfmewdslvpmr",
     "base_url": "https://api.siliconflow.cn/v1",
