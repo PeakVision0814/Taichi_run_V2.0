@@ -321,7 +321,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 detail_window.title(f"历史记录详情 - {filename}")
 
                 try:
-                    detail_window.iconbitmap("icon/history_record.ico")  # 可以复用 history_record.ico 图标
+                    detail_window.iconbitmap("icon/history_record.ico") 
                 except tk.TclError as e:
                     print(f"加载历史记录详情窗口图标失败: {e}")
 
@@ -460,8 +460,8 @@ CSV 格式的心率数据:
 
                 def call_openai_api(prompt):
                     try:
-                        response = self.openai_client.chat.completions.create( # [修改 17.8] 使用 self.openai_client
-                            model=self.app_settings.get("model", "Qwen/Qwen2.5-7B-Instruct"), # [修改 17.9] 使用设置中的 model, 默认模型
+                        response = self.openai_client.chat.completions.create( 
+                            model=self.app_settings.get("model", "Qwen/Qwen2.5-7B-Instruct"), 
                             messages=[{'role': 'user', 'content': prompt}],
                             stream=False
                         )
