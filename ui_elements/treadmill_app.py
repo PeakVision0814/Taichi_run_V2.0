@@ -49,7 +49,7 @@ import threading
 from ui_elements.settings_window import SettingsWindow
 
 
-SETTINGS_FILE = "data/app_settings.json" 
+DEFAULT_SETTINGS_FILE = "data/app_settings.json" 
 
 class TreadmillApp(tk.Tk, HeartRateListener):
 
@@ -196,22 +196,33 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.openai_client = None
 
     def load_settings(self):
+        """从 JSON 文件加载设置，文件路径从设置中读取，或使用默认路径"""
         default_settings = {
+            "settings_file_path": DEFAULT_SETTINGS_FILE, # [修改 20.2] 默认设置文件路径
             "default_lap_distance": 200,
             "api_key": "",
             "base_url": "",
             "model": "Qwen/Qwen2.5-7B-Instruct"
         }
-        if os.path.exists(SETTINGS_FILE):
+        settings_file_path = DEFAULT_SETTINGS_FILE # 初始默认路径
+        if os.path.exists(DEFAULT_SETTINGS_FILE): # [修改 20.3] 先检查默认路径的文件是否存在
             try:
-                with open(SETTINGS_FILE, 'r') as f:
+                with open(DEFAULT_SETTINGS_FILE, 'r') as f: # [修改 20.4] 先尝试用默认路径加载，获取设置文件路径
+                    initial_settings = json.load(f)
+                    settings_file_path = initial_settings.get("settings_file_path", DEFAULT_SETTINGS_FILE) # 从已有的设置文件中获取设置文件路径
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass # 加载失败，保持默认路径
+        if os.path.exists(settings_file_path): # [修改 20.5] 使用确定的 settings_file_path
+            try:
+                with open(settings_file_path, 'r') as f: # [修改 20.6] 使用确定的 settings_file_path 加载所有设置
                     loaded_settings = json.load(f)
                     return {**default_settings, **loaded_settings}
             except (FileNotFoundError, json.JSONDecodeError):
-                messagebox.showerror("加载设置失败", "无法加载设置文件，将使用默认设置。")
+                messagebox.showerror("加载设置失败", f"无法加载设置文件: {settings_file_path}，将使用默认设置。") # [修改 20.7] 错误提示包含文件路径
                 return default_settings
         else:
-            return default_settings 
+            return default_settings
+ 
 
     def initialize_openai_client(self):
         api_key = self.app_settings.get("api_key")

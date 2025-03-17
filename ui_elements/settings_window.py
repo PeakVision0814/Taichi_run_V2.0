@@ -30,7 +30,7 @@ from tkinter import messagebox
 import json
 import os
 
-SETTINGS_FILE = "data/app_settings.json"  
+DEFAULT_SETTINGS_FILE = "data/app_settings.json"  
 
 class SettingsWindow(tk.Toplevel):
     def __init__(self, master, default_lap_distance, master_app, initial_settings):
@@ -47,31 +47,40 @@ class SettingsWindow(tk.Toplevel):
         self.default_lap_distance = default_lap_distance
         self.settings = initial_settings  
 
-        tk.Label(self, text="默认圈程距离 (米):").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+
+        tk.Label(self, text="设置文件路径:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        self.settings_file_path_entry = tk.Entry(self)
+        self.settings_file_path_entry.grid(row=0, column=1, padx=10, pady=5)
+        settings_file_path = self.settings.get("settings_file_path", DEFAULT_SETTINGS_FILE) 
+        self.settings_file_path_entry.insert(0, settings_file_path)
+
+
+        tk.Label(self, text="默认圈程距离 (米):").grid(row=1, column=0, sticky="w", padx=10, pady=5)
         self.default_distance_entry = tk.Entry(self)
-        self.default_distance_entry.grid(row=0, column=1, padx=10, pady=5)
+        self.default_distance_entry.grid(row=1, column=1, padx=10, pady=5)
         self.default_distance_entry.insert(0, str(self.default_lap_distance))
 
-        tk.Label(self, text="API Key:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="API Key:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
         self.api_key_entry = tk.Entry(self, show="*") 
-        self.api_key_entry.grid(row=1, column=1, padx=10, pady=5)
+        self.api_key_entry.grid(row=2, column=1, padx=10, pady=5)
         self.api_key_entry.insert(0, self.settings.get("api_key", "")) 
 
-        tk.Label(self, text="Base URL:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="Base URL:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
         self.base_url_entry = tk.Entry(self)
-        self.base_url_entry.grid(row=2, column=1, padx=10, pady=5)
+        self.base_url_entry.grid(row=3, column=1, padx=10, pady=5)
         self.base_url_entry.insert(0, self.settings.get("base_url", "")) 
 
-        tk.Label(self, text="Model:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="Model:").grid(row=4, column=0, sticky="w", padx=10, pady=5)
         self.model_entry = tk.Entry(self)
-        self.model_entry.grid(row=3, column=1, padx=10, pady=5)
+        self.model_entry.grid(row=4, column=1, padx=10, pady=5)
         self.model_entry.insert(0, self.settings.get("model", "")) 
 
         save_button = tk.Button(self, text="保存设置", command=self.save_settings)
-        save_button.grid(row=4, column=0, columnspan=2, pady=10)
+        save_button.grid(row=5, column=0, columnspan=2, pady=10)
 
     def save_settings(self):
         try:
+            new_settings_file_path = self.settings_file_path_entry.get() 
             new_default_distance = int(self.default_distance_entry.get())
             new_api_key = self.api_key_entry.get()
             new_base_url = self.base_url_entry.get()
@@ -85,6 +94,7 @@ class SettingsWindow(tk.Toplevel):
                 messagebox.showerror("输入错误", "圈程距离必须是正整数。")
                 return 
 
+            self.settings["settings_file_path"] = new_settings_file_path
             self.settings["default_lap_distance"] = new_default_distance
             self.settings["api_key"] = new_api_key
             self.settings["base_url"] = new_base_url
@@ -97,7 +107,7 @@ class SettingsWindow(tk.Toplevel):
             messagebox.showerror("输入错误", "请输入有效的整数作为圈程距离。")
 
     def save_settings_to_file(self):
-        """将设置保存到 JSON 文件"""
-        with open(SETTINGS_FILE, 'w') as f:
+        settings_file_path = self.settings.get("settings_file_path", DEFAULT_SETTINGS_FILE) 
+        with open(settings_file_path, 'w') as f: 
             json.dump(self.settings, f, indent=4) 
 
