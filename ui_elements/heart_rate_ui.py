@@ -7,6 +7,12 @@ class HeartRateUI:
         self.root = root
         self.root.title("心率模拟器")
 
+        try:
+            self.root.iconbitmap("icon/heart_rate.ico")  # 设置窗口图标 (ICO)
+        except tk.TclError as e:
+            print(f"加载心率模拟器窗口图标失败: {e}")  # 如果加载失败，打印错误信息
+
+
         self.collector = collector 
         self.simulator = HeartRateSimulator(collector)  
 

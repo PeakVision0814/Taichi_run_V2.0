@@ -1,6 +1,8 @@
 # treadmill_app.py
 import tkinter as tk
 import time
+import json
+import os 
 import matplotlib.pyplot as plt
 from tkinter import ttk, filedialog, messagebox
 from core.heart_rate_collector import HeartRateCollector, HeartRateListener
@@ -11,15 +13,22 @@ from core.exercise_data_manager import get_history_record_previews, load_exercis
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import OpenAI
 import threading
-from ui_elements.settings_window import SettingsWindow # [修改 14.1] 导入 SettingsWindow 类
+from ui_elements.settings_window import SettingsWindow
 
+
+SETTINGS_FILE = "data/app_settings.json" 
 
 class TreadmillApp(tk.Tk, HeartRateListener):
-    DEFAULT_LAP_DISTANCE = 200  #  [修改 11.1]  定义类变量存储默认圈程距离
 
     def __init__(self, collector):
         super().__init__()
-        self.title("跑步机应用")
+        self.title("太极式健身跑V2.0")
+
+        try:
+            self.iconbitmap("icon/app_icon.ico") #  [修改 23.3] 设置窗口图标 (ICO)
+        except tk.TclError as e:
+            print(f"加载应用图标失败: {e}") #  如果加载失败，打印错误信息
+        
 
         self.collector = collector
         self.collector.add_listener(self)
@@ -37,20 +46,24 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                               "10": 5400
         }
 
-        #  [修改 12.1] 加载齿轮图标
+        self.app_settings = self.load_settings()
+
+        self.openai_client = self.initialize_openai_client()
+
+
         try:
-            self.settings_icon = tk.PhotoImage(file="icon/gear_icon.png")  # 假设齿轮图标文件名为 gear_icon.gif，与脚本在同一目录
+            self.settings_icon = tk.PhotoImage(file="icon/gear_icon.png")  
             self.settings_icon = self.settings_icon.subsample(10,10)
         except tk.TclError:
-            self.settings_icon = None  # 如果图标加载失败，则设置为 None
+            self.settings_icon = None  
 
-        #  [修改 12.2] 创建 "设置" 按钮，使用图标，并放置在左上角
+ 
         settings_button = tk.Button(self,
-                                     image=self.settings_icon if self.settings_icon else None, # 使用图标，如果加载失败则不显示图标
-                                     text="" if self.settings_icon else "设置", #  如果使用图标，则不显示文字，否则显示 "设置" 文字
-                                     compound="top", #  确保在没有文字时，图标能正确显示 (如果需要)
+                                     image=self.settings_icon if self.settings_icon else None, 
+                                     text="" if self.settings_icon else "设置", 
+                                     compound="top", 
                                      command=self.open_settings_window)
-        settings_button.grid(row=0, column=0, sticky="nw", padx=5, pady=5) #  放置在左上角 (row=0, column=0), sticky="nw" 对齐到西北角
+        settings_button.grid(row=0, column=0, sticky="nw", padx=5, pady=5) 
 
         tk.Label(self, text="选择等级:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
         self.level_var = tk.StringVar(self)
@@ -62,10 +75,12 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.age_entry = tk.Entry(self)
         self.age_entry.grid(row=2, column=1, padx=10, pady=5)
 
+
         tk.Label(self, text="圈程距离(米):").grid(row=3, column=0, sticky="w", padx=10, pady=5)
         self.distance_entry = tk.Entry(self)
         self.distance_entry.grid(row=3, column=1, padx=10, pady=5)
-        self.distance_entry.insert(0, str(TreadmillApp.DEFAULT_LAP_DISTANCE)) #  [修改 11.2]  初始值使用类变量
+        default_lap_distance = self.app_settings.get("default_lap_distance", 200)
+        self.distance_entry.insert(0, str(default_lap_distance)) 
 
         tk.Label(self, text="目标:").grid(row=4, column=0, sticky="w", padx=10, pady=5)
         self.target_label = tk.Label(self, text="无")
@@ -147,6 +162,48 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         }
         self.openai_client = None
 
+    def load_settings(self):
+        default_settings = {
+            "default_lap_distance": 200,
+            "api_key": "",
+            "base_url": "",
+            "model": "Qwen/Qwen2.5-7B-Instruct"
+        }
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, 'r') as f:
+                    loaded_settings = json.load(f)
+                    return {**default_settings, **loaded_settings}
+            except (FileNotFoundError, json.JSONDecodeError):
+                messagebox.showerror("加载设置失败", "无法加载设置文件，将使用默认设置。")
+                return default_settings
+        else:
+            return default_settings 
+
+    def initialize_openai_client(self):
+        api_key = self.app_settings.get("api_key")
+        base_url = self.app_settings.get("base_url")
+
+        self.api_key = api_key
+        self.base_url = base_url
+        try:
+            if api_key and base_url:
+                client = OpenAI(api_key=api_key, base_url=base_url)
+                # print("OpenAI 客户端初始化成功 (使用设置中的 API Key 和 Base URL).")
+                return client
+            elif api_key: # 只有 api_key
+                 client = OpenAI(api_key=api_key)
+                #  print("OpenAI 客户端初始化成功 (仅使用设置中的 API Key).") 
+                 return client
+            else: #  都没有
+                # print("OpenAI API Key 或 Base URL 未配置，将无法使用 AI 功能。") # 提示信息
+                return None #  API Key 或 Base URL 未设置，返回 None
+        except Exception as e:
+            messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
+            # print(f"OpenAI API 初始化失败: {e}") #  打印到控制台，方便调试
+            return None #  初始化失败，返回 None
+
+
 
     def update_target(self, event):
         level = self.level_var.get()
@@ -227,6 +284,13 @@ class TreadmillApp(tk.Tk, HeartRateListener):
     def open_history_record(self):
         history_window = tk.Toplevel(self)
         history_window.title("历史跑步记录")
+
+        # [修改 27.1] 设置历史记录窗口图标
+        try:
+            history_window.iconbitmap("icon/history_record.ico")
+        except tk.TclError as e:
+            print(f"加载历史记录窗口图标失败: {e}")
+
         history_previews = get_history_record_previews()
 
         if not history_previews:
@@ -255,6 +319,13 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             if exercise_data:
                 detail_window = tk.Toplevel(self)
                 detail_window.title(f"历史记录详情 - {filename}")
+
+                try:
+                    detail_window.iconbitmap("icon/history_record.ico")  # 可以复用 history_record.ico 图标
+                except tk.TclError as e:
+                    print(f"加载历史记录详情窗口图标失败: {e}")
+
+
                 tk.Label(detail_window, text=f"日期时间: {selected_record_preview['datetime']}").pack(anchor="w")
                 tk.Label(detail_window, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
                 tk.Label(detail_window, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
@@ -340,7 +411,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
 
                 if not self.openai_client:
                     try:
-                        self.openai_client = OpenAI(api_key="sk-qydfmsqjvccqxrcijqenzwugckjrrtdttyfgvfmewdslvpmr", base_url="https://api.siliconflow.cn/v1")
+                        self.openai_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
                     except Exception as e:
                         messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
                         self.ai_analysis_text = tk.Text(detail_window, height=5, width=60, wrap=tk.WORD)
@@ -354,10 +425,10 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 self.ai_analysis_text.insert(tk.END, "正在分析中，请稍候...\n")
                 self.ai_analysis_text.config(state=tk.DISABLED)
 
-                #  [修改 9.1]  将 CSV 数据转换为字符串
+
                 csv_data_string = ""
                 for row in exercise_data:
-                    csv_data_string += ",".join(map(str, row)) + "\n" # 每行数据用逗号分隔，行之间用换行符分隔
+                    csv_data_string += ",".join(map(str, row)) + "\n" 
 
 
                 prompt_content = f"""
@@ -378,18 +449,19 @@ CSV 格式的心率数据:
 - 更具体的运动建议 (例如:  如果运动强度偏低，建议提高多少速度或坡度; 如果心率波动大，建议如何调整呼吸和节奏;  针对心率恢复情况给出建议，例如运动后拉伸或放松)。
 
 注意事项：
-输出的语气需要元气满满的
-最后为用户给出一句加油的话语
-请输出纯text文本
-不要分段
+输出的语气需要元气满满的。
+最后为用户给出一句加油的话语。
+请输出纯text文本。
+有时候输出没有标点，这是错误的输出方式。
+不要分段。
 
 请使用中文生成 150 字左右的详细分析报告。
                 """
 
                 def call_openai_api(prompt):
                     try:
-                        response = self.openai_client.chat.completions.create(
-                            model='Qwen/Qwen2.5-7B-Instruct',
+                        response = self.openai_client.chat.completions.create( # [修改 17.8] 使用 self.openai_client
+                            model=self.app_settings.get("model", "Qwen/Qwen2.5-7B-Instruct"), # [修改 17.9] 使用设置中的 model, 默认模型
                             messages=[{'role': 'user', 'content': prompt}],
                             stream=False
                         )
@@ -420,7 +492,10 @@ CSV 格式的心率数据:
 
 
     def open_settings_window(self):
-        SettingsWindow(self, TreadmillApp.DEFAULT_LAP_DISTANCE, self)
+        default_lap_distance = self.app_settings.get("default_lap_distance", 200) 
+        SettingsWindow(self, default_lap_distance, self, self.app_settings)
+
+
 
 
 
