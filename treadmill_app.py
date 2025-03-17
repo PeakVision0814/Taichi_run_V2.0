@@ -36,74 +36,87 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                               "10": 5400
         }
 
-        tk.Label(self, text="选择等级:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        #  [修改 12.1] 加载齿轮图标
+        try:
+            self.settings_icon = tk.PhotoImage(file="icon/gear_icon.png")  # 假设齿轮图标文件名为 gear_icon.gif，与脚本在同一目录
+            self.settings_icon = self.settings_icon.subsample(10,10)
+        except tk.TclError:
+            self.settings_icon = None  # 如果图标加载失败，则设置为 None
+
+        #  [修改 12.2] 创建 "设置" 按钮，使用图标，并放置在左上角
+        settings_button = tk.Button(self,
+                                     image=self.settings_icon if self.settings_icon else None, # 使用图标，如果加载失败则不显示图标
+                                     text="" if self.settings_icon else "设置", #  如果使用图标，则不显示文字，否则显示 "设置" 文字
+                                     compound="top", #  确保在没有文字时，图标能正确显示 (如果需要)
+                                     command=self.open_settings_window)
+        settings_button.grid(row=0, column=0, sticky="nw", padx=5, pady=5) #  放置在左上角 (row=0, column=0), sticky="nw" 对齐到西北角
+
+        tk.Label(self, text="选择等级:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
         self.level_var = tk.StringVar(self)
         self.level_combobox = ttk.Combobox(self, textvariable=self.level_var, values=list(self.level_targets.keys()))
-        self.level_combobox.grid(row=0, column=1, padx=10, pady=5)
+        self.level_combobox.grid(row=1, column=1, padx=10, pady=5)
         self.level_combobox.bind("<<ComboboxSelected>>", self.update_target)
 
-        tk.Label(self, text="年龄:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="年龄:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
         self.age_entry = tk.Entry(self)
-        self.age_entry.grid(row=1, column=1, padx=10, pady=5)
+        self.age_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="圈程距离(米):").grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="圈程距离(米):").grid(row=3, column=0, sticky="w", padx=10, pady=5)
         self.distance_entry = tk.Entry(self)
-        self.distance_entry.grid(row=2, column=1, padx=10, pady=5)
+        self.distance_entry.grid(row=3, column=1, padx=10, pady=5)
         self.distance_entry.insert(0, str(TreadmillApp.DEFAULT_LAP_DISTANCE)) #  [修改 11.2]  初始值使用类变量
 
-        tk.Label(self, text="目标:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="目标:").grid(row=4, column=0, sticky="w", padx=10, pady=5)
         self.target_label = tk.Label(self, text="无")
-        self.target_label.grid(row=3, column=1, padx=10, pady=5)
+        self.target_label.grid(row=4, column=1, padx=10, pady=5)
 
         self.start_button = tk.Button(self, text="开始运动", command=self.start_treadmill)
-        self.start_button.grid(row=4, column=0, padx=10, pady=5)
+        self.start_button.grid(row=5, column=0, padx=10, pady=5)
         self.stop_button = tk.Button(self, text="停止运动", command=self.stop_treadmill, state=tk.DISABLED)
-        self.stop_button.grid(row=4, column=1, padx=10, pady=5)
+        self.stop_button.grid(row=5, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="当前心率:").grid(row=5, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="当前心率:").grid(row=6, column=0, sticky="w", padx=10, pady=5)
         self.current_rate_label = tk.Label(self, text="0 bpm")
-        self.current_rate_label.grid(row=5, column=1, padx=10, pady=5)
+        self.current_rate_label.grid(row=6, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="平均心率:").grid(row=6, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="平均心率:").grid(row=7, column=0, sticky="w", padx=10, pady=5)
         self.average_rate_label = tk.Label(self, text="0 bpm")
-        self.average_rate_label.grid(row=6, column=1, padx=10, pady=5)
+        self.average_rate_label.grid(row=7, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="本圈平均心率:").grid(row=7, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="本圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5)
         self.lap_average_rate_label = tk.Label(self, text="0 bpm")
-        self.lap_average_rate_label.grid(row=7, column=1, padx=10, pady=5)
+        self.lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="上圈平均心率:").grid(row=8, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="上圈平均心率:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
         self.last_lap_average_rate_label = tk.Label(self, text="0 bpm")
-        self.last_lap_average_rate_label.grid(row=8, column=1, padx=10, pady=5)
+        self.last_lap_average_rate_label.grid(row=9, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="当前速度:").grid(row=9, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="当前速度:").grid(row=10, column=0, sticky="w", padx=10, pady=5)
         self.current_speed_label = tk.Label(self, text="0 m/s")
-        self.current_speed_label.grid(row=9, column=1, padx=10, pady=5)
+        self.current_speed_label.grid(row=10, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="运动时间:").grid(row=10, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="运动时间:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
         self.time_label = tk.Label(self, text="00:00")
-        self.time_label.grid(row=10, column=1, padx=10, pady=5)
+        self.time_label.grid(row=11, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="运动距离:").grid(row=11, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="运动距离:").grid(row=12, column=0, sticky="w", padx=10, pady=5)
         self.distance_label = tk.Label(self, text="0 米")
-        self.distance_label.grid(row=11, column=1, padx=10, pady=5)
+        self.distance_label.grid(row=12, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="完成圈程:").grid(row=12, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="完成圈程:").grid(row=13, column=0, sticky="w", padx=10, pady=5)
         self.lap_label = tk.Label(self, text="0 圈")
-        self.lap_label.grid(row=12, column=1, padx=10, pady=5)
+        self.lap_label.grid(row=13, column=1, padx=10, pady=5)
 
-        tk.Label(self, text="停止运动后平均心率 (1分钟):").grid(row=13, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self, text="停止运动后平均心率 (1分钟):").grid(row=14, column=0, sticky="w", padx=10, pady=5)
         self.post_exercise_average_rate_label = tk.Label(self, text="等待运动停止...")
-        self.post_exercise_average_rate_label.grid(row=13, column=1, padx=10, pady=5)
+        self.post_exercise_average_rate_label.grid(row=14, column=1, padx=10, pady=5)
 
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
-        open_ui_button.grid(row=14, column=0, columnspan=2, pady=10)
+        open_ui_button.grid(row=15, column=0, columnspan=2, pady=10)
 
         history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record)
-        history_button.grid(row=15, column=0, columnspan=2, pady=10)
+        history_button.grid(row=16, column=0, columnspan=2, pady=10)
 
-        settings_button = tk.Button(self, text="设置", command=self.open_settings_window) #  [修改 11.3]  添加 "设置" 按钮
-        settings_button.grid(row=16, column=0, columnspan=2, pady=10) #  放在 "历史记录" 按钮下方
 
         self.treadmill_controller = TreadmillController(
             self.treadmill_simulator,
