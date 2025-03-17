@@ -1,10 +1,43 @@
-# treadmill_app.py
+"""
+treadmill_app.py
+Treadmill Exercise Application Module
+======================================
+This module is the main application for controlling a treadmill exercise simulation.
+It integrates various components including UI elements, treadmill simulator, heart
+rate collector, exercise data manager, and historical record viewer to provide
+a comprehensive exercise application.
+
+The application allows users to:
+- Select exercise levels and set lap distances.
+- Start, stop, and monitor treadmill exercises.
+- Track real-time heart rate, speed, distance, and exercise time.
+- View exercise history records and detailed session analysis, including heart rate graphs and AI-powered feedback.
+- Configure application settings such as default lap distance and API keys.
+- Simulate heart rate data through a separate UI.
+
+Key features include:
+- User-friendly graphical interface built with Tkinter.
+- Real-time exercise monitoring and display.
+- Integration with a heart rate collector and treadmill simulator.
+- Exercise data logging and historical record management.
+- AI-driven exercise analysis and feedback (via OpenAI API).
+- Customizable settings and user preferences.
+
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; gh1848026781@163.com
+Date Created: 2025-03-06
+Last Modified: 2025-03-17
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
 import tkinter as tk
 import time
 import json
 import os 
 import matplotlib.pyplot as plt
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, messagebox
 from core.heart_rate_collector import HeartRateCollector, HeartRateListener
 from ui_elements.heart_rate_ui import HeartRateUI
 from simulator.treadmill_simulator import TreadmillSimulator
@@ -25,9 +58,9 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.title("太极式健身跑V2.0")
 
         try:
-            self.iconbitmap("icon/app_icon.ico") #  [修改 23.3] 设置窗口图标 (ICO)
+            self.iconbitmap("icon/app_icon.ico") 
         except tk.TclError as e:
-            print(f"加载应用图标失败: {e}") #  如果加载失败，打印错误信息
+            print(f"加载应用图标失败: {e}") 
         
 
         self.collector = collector
@@ -189,19 +222,17 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         try:
             if api_key and base_url:
                 client = OpenAI(api_key=api_key, base_url=base_url)
-                # print("OpenAI 客户端初始化成功 (使用设置中的 API Key 和 Base URL).")
                 return client
-            elif api_key: # 只有 api_key
+            elif api_key: 
                  client = OpenAI(api_key=api_key)
-                #  print("OpenAI 客户端初始化成功 (仅使用设置中的 API Key).") 
+
                  return client
-            else: #  都没有
-                # print("OpenAI API Key 或 Base URL 未配置，将无法使用 AI 功能。") # 提示信息
-                return None #  API Key 或 Base URL 未设置，返回 None
+            else: 
+
+                return None 
         except Exception as e:
             messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
-            # print(f"OpenAI API 初始化失败: {e}") #  打印到控制台，方便调试
-            return None #  初始化失败，返回 None
+            return None 
 
 
 

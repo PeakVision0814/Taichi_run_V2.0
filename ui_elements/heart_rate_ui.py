@@ -1,4 +1,34 @@
-# heart_rate_ui.py
+"""
+heart_rate_ui.py
+Heart Rate Simulator User Interface Module
+===========================================
+This module provides a graphical user interface (GUI) for controlling and
+visualizing a heart rate simulator. It uses Tkinter to create a window with
+buttons to set different heart rate ranges and a label to display the current
+simulated heart rate.
+
+The HeartRateUI class integrates a HeartRateSimulator instance to generate
+simulated heart rate data and displays it in real-time. Users can select
+predefined heart rate ranges by clicking buttons, and the UI continuously
+updates the displayed heart rate to reflect the simulator's output.
+
+Key features:
+- GUI control for starting and stopping heart rate simulation.
+- Buttons for selecting predefined heart rate ranges for simulation.
+- Real-time display of the simulated heart rate.
+- Integration with HeartRateSimulator for data generation.
+- Icon support for the application window.
+
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; gh1848026781@163.com
+Date Created: 2025-03-06
+Last Modified: 2025-03-17
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
+
 import tkinter as tk
 from simulator.heart_rate_simulator import HeartRateSimulator
 
@@ -8,9 +38,9 @@ class HeartRateUI:
         self.root.title("心率模拟器")
 
         try:
-            self.root.iconbitmap("icon/heart_rate.ico")  # 设置窗口图标 (ICO)
+            self.root.iconbitmap("icon/heart_rate.ico") 
         except tk.TclError as e:
-            print(f"加载心率模拟器窗口图标失败: {e}")  # 如果加载失败，打印错误信息
+            print(f"加载心率模拟器窗口图标失败: {e}")  
 
 
         self.collector = collector 

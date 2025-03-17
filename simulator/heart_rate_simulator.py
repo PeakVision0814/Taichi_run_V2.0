@@ -1,3 +1,25 @@
+"""
+heart_rate_simulator.py
+Heart Rate Simulation Module
+==============================
+This module provides a simulator for heart rate data. It is designed to generate
+realistic heart rate readings within a specified range and feed them to a
+HeartRateCollector. This simulation is useful for testing and development
+purposes when a real heart rate sensor is not available.
+The module includes the HeartRateSimulator class, which allows setting a heart
+rate range, starting and stopping the simulation, and generating random heart
+rate values within that range at one-second intervals. The simulator notifies
+a HeartRateCollector instance with each generated heart rate reading.
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; gh1848026781@163.com
+Date Created: 2025-03-06
+Last Modified: 2025-03-17
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
+
+
 import random
 import time
 import threading

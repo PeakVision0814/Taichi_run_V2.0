@@ -1,4 +1,32 @@
-# treadmill_controller.py
+"""
+treadmill_controller.py
+Treadmill Exercise Controller Module
+====================================
+This module implements the control logic for a treadmill exercise simulation.
+It manages the exercise flow, speed adjustments based on pre-defined levels and
+real-time heart rate monitoring, distance tracking, lap counting, and data persistence.
+The module integrates with:
+- `TreadmillSimulator`: To control the simulated treadmill speed and distance.
+- UI elements (via tkinter): To receive user inputs like exercise level, lap distance, and age,
+  and to update UI labels displaying current speed, distance, laps, and post-exercise heart rate.
+- `HeartRateCollector`: To receive real-time heart rate data for monitoring and speed adjustments.
+- `exercise_data_manager`: To save exercise session data to CSV files for historical records.
+Key functionalities include:
+- Starting and stopping exercise sessions.
+- Setting exercise level and lap distance.
+- Dynamically adjusting treadmill speed based on the selected level and heart rate thresholds.
+- Tracking distance covered and laps completed.
+- Monitoring heart rate and triggering speed reductions if heart rate exceeds a threshold.
+- Saving exercise data upon completion, including heart rate data, exercise parameters, and duration.
+- Providing feedback to the user through message boxes and UI updates.
+Author: Gaopeng Huang; Hui Guo
+Email: perished_hgp@163.com; gh1848026781@163.com
+Date Created: 2025-03-06
+Last Modified: 2025-03-17
+Copyright (c) 2025 PeakVision
+All rights reserved.
+This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
+"""
 import time
 import threading
 from tkinter import messagebox
@@ -47,7 +75,7 @@ class TreadmillController:
         self.post_exercise_heart_rates = []
         self.post_exercise_collection_active = False
         self.exercise_start_time = None
-        self.total_distance_meters = 0.0 #  [修改 5.21] 初始化 total_distance_meters
+        self.total_distance_meters = 0.0
 
 
     def start_exercise(self):
@@ -98,7 +126,7 @@ class TreadmillController:
         self.reduction_stage = "small"
         self.post_exercise_collection_active = False
         self.exercise_start_time = datetime.datetime.now()
-        self.total_distance_meters = 0.0 #  [修改 5.22] 重置 total_distance_meters
+        self.total_distance_meters = 0.0 
 
         self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
@@ -128,8 +156,7 @@ class TreadmillController:
             if session_data:
                 timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S")
                 filename = f"heart_rate_log_{timestamp_str}.csv"
-                #  [修改 5.23]  在 save_exercise_data 中传递 self.total_distance_meters
-                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed, self.total_distance_meters) #  传递 total_distance_meters
+                save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, self.laps_completed, self.total_distance_meters) 
                 print(f"运动数据已保存到: {filename}")
             else:
                 print("没有心率数据需要保存。")
@@ -210,14 +237,14 @@ class TreadmillController:
                         else:
                             print("速度列表已结束，停止运动。")
                             self._exercise_completed()
-            self._update_distance_label() #  [修改 5.24] 调用 _update_distance_label
+            self._update_distance_label()
             self._schedule_ui_update()
 
 
-    def _update_distance_label(self): #  [修改 5.25] 新增 _update_distance_label 函数
+    def _update_distance_label(self): 
         if self.is_running:
             distance_covered = self.simulator.get_distance_covered()
-            self.total_distance_meters = distance_covered #  更新 total_distance_meters
+            self.total_distance_meters = distance_covered 
             distance_text = f"{distance_covered:.2f} 米"
             self.distance_label.after(0, self.distance_label.config, {"text": distance_text})
 
