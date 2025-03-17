@@ -11,6 +11,7 @@ from core.exercise_data_manager import get_history_record_previews, load_exercis
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import OpenAI
 import threading
+from ui_elements.settings_window import SettingsWindow # [修改 14.1] 导入 SettingsWindow 类
 
 
 class TreadmillApp(tk.Tk, HeartRateListener):
@@ -112,10 +113,10 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.post_exercise_average_rate_label.grid(row=14, column=1, padx=10, pady=5)
 
         open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
-        open_ui_button.grid(row=15, column=0, columnspan=2, pady=10)
+        open_ui_button.grid(row=15, column=0, columnspan=1, pady=10)
 
         history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record)
-        history_button.grid(row=16, column=0, columnspan=2, pady=10)
+        history_button.grid(row=15, column=1, columnspan=2, pady=10)
 
 
         self.treadmill_controller = TreadmillController(
@@ -418,37 +419,8 @@ CSV 格式的心率数据:
                 detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close)
 
 
-    def open_settings_window(self): #  [修改 11.4]  打开设置窗口的函数
-        SettingsWindow(self)
-
-
-#  [修改 11.5]  创建 SettingsWindow 类
-class SettingsWindow(tk.Toplevel):
-    def __init__(self, master):
-        super().__init__(master)
-        self.title("设置")
-        self.master_app = master #  保存主应用实例，方便访问主应用的数据
-
-        tk.Label(self, text="默认圈程距离 (米):").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-        self.default_distance_entry = tk.Entry(self)
-        self.default_distance_entry.grid(row=0, column=1, padx=10, pady=5)
-        self.default_distance_entry.insert(0, str(TreadmillApp.DEFAULT_LAP_DISTANCE)) #  设置默认值
-
-        save_button = tk.Button(self, text="保存设置", command=self.save_settings)
-        save_button.grid(row=1, column=0, columnspan=2, pady=10)
-
-    def save_settings(self): #  [修改 11.6]  保存设置的函数
-        try:
-            new_default_distance = int(self.default_distance_entry.get())
-            if new_default_distance > 0:
-                TreadmillApp.DEFAULT_LAP_DISTANCE = new_default_distance #  更新类变量
-                self.master_app.distance_entry.delete(0, tk.END) #  更新主界面 distance_entry 的值
-                self.master_app.distance_entry.insert(0, str(TreadmillApp.DEFAULT_LAP_DISTANCE))
-                messagebox.showinfo("设置已保存", "默认圈程距离已保存。")
-            else:
-                messagebox.showerror("输入错误", "圈程距离必须是正整数。")
-        except ValueError:
-            messagebox.showerror("输入错误", "请输入有效的整数作为圈程距离。")
+    def open_settings_window(self):
+        SettingsWindow(self, TreadmillApp.DEFAULT_LAP_DISTANCE, self)
 
 
 
