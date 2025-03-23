@@ -199,27 +199,27 @@ class TreadmillApp(tk.Tk, HeartRateListener):
     def load_settings(self):
         """从 JSON 文件加载设置，文件路径从设置中读取，或使用默认路径"""
         default_settings = {
-            "settings_file_path": DEFAULT_SETTINGS_FILE, # [修改 20.2] 默认设置文件路径
+            "settings_file_path": DEFAULT_SETTINGS_FILE, 
             "default_lap_distance": 200,
             "api_key": "",
             "base_url": "",
             "model": "Qwen/Qwen2.5-7B-Instruct"
         }
-        settings_file_path = DEFAULT_SETTINGS_FILE # 初始默认路径
-        if os.path.exists(DEFAULT_SETTINGS_FILE): # [修改 20.3] 先检查默认路径的文件是否存在
+        settings_file_path = DEFAULT_SETTINGS_FILE 
+        if os.path.exists(DEFAULT_SETTINGS_FILE): 
             try:
-                with open(DEFAULT_SETTINGS_FILE, 'r') as f: # [修改 20.4] 先尝试用默认路径加载，获取设置文件路径
+                with open(DEFAULT_SETTINGS_FILE, 'r') as f: 
                     initial_settings = json.load(f)
-                    settings_file_path = initial_settings.get("settings_file_path", DEFAULT_SETTINGS_FILE) # 从已有的设置文件中获取设置文件路径
+                    settings_file_path = initial_settings.get("settings_file_path", DEFAULT_SETTINGS_FILE) 
             except (FileNotFoundError, json.JSONDecodeError):
-                pass # 加载失败，保持默认路径
-        if os.path.exists(settings_file_path): # [修改 20.5] 使用确定的 settings_file_path
+                pass 
+        if os.path.exists(settings_file_path): 
             try:
-                with open(settings_file_path, 'r') as f: # [修改 20.6] 使用确定的 settings_file_path 加载所有设置
+                with open(settings_file_path, 'r') as f: 
                     loaded_settings = json.load(f)
                     return {**default_settings, **loaded_settings}
             except (FileNotFoundError, json.JSONDecodeError):
-                messagebox.showerror("加载设置失败", f"无法加载设置文件: {settings_file_path}，将使用默认设置。") # [修改 20.7] 错误提示包含文件路径
+                messagebox.showerror("加载设置失败", f"无法加载设置文件: {settings_file_path}，将使用默认设置。") 
                 return default_settings
         else:
             return default_settings
@@ -333,55 +333,58 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         except tk.TclError as e:
             print(f"加载历史记录窗口图标失败: {e}")
 
+        refresh_button = tk.Button(history_window, text="刷新", command=lambda: self.refresh_history_record_list(listbox))
+        refresh_button.grid(row=0, column=1, sticky='ne', padx=10, pady=10)
+
+        list_frame = tk.Frame(history_window) 
+        list_frame.grid(row=1, column=0, sticky='nsew', padx=10, pady=10, columnspan=2) 
+
         history_previews = get_history_record_previews()
 
         if not history_previews:
-            tk.Label(history_window, text="没有历史跑步记录").pack(padx=20, pady=20)
+            tk.Label(list_frame, text="没有历史跑步记录").pack(padx=20, pady=20) 
             return
 
-        # listbox = tk.Listbox(history_window, width=80)
-        listbox = tk.Listbox(history_window, width=80, selectmode=tk.MULTIPLE) # 允许选择多个
-        listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        listbox = tk.Listbox(list_frame, width=80, selectmode=tk.SINGLE) 
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 
 
-        # for preview in history_previews:
-        for index, preview in enumerate(history_previews): # 添加索引
+        scrollbar = tk.Scrollbar(list_frame, orient=tk.VERTICAL, command=listbox.yview) 
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y) 
+        listbox.config(yscrollcommand=scrollbar.set) 
+
+
+        for index, preview in enumerate(history_previews):
             display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}"
             listbox.insert(tk.END, display_text)
             listbox.itemconfig(tk.END, fg="blue")
-            listbox.itemconfig(tk.END, foreground="blue") # 确保颜色设置正确
+            listbox.itemconfig(tk.END, foreground="blue")
 
         listbox.bind("<Double-Button-1>", lambda event: self.show_history_detail(history_previews, listbox.curselection()))
-        # 新增删除按钮
-        delete_button = tk.Button(history_window, text="删除记录", command=lambda: self.delete_history_record(history_previews, listbox))
-        delete_button.pack(pady=10)
 
-    def delete_history_record(self, history_previews, listbox):
-        selected_indices = listbox.curselection() # 获取所有选中的索引
-        if not selected_indices:
-            messagebox.showinfo("提示", "请选择要删除的历史记录。")
+        delete_button = tk.Button(history_window, text="删除记录", command=lambda: self.delete_history_record(history_previews, listbox))
+        delete_button.grid(row=2, column=0, columnspan=2, pady=10) 
+
+        history_window.grid_columnconfigure(0, weight=1) 
+        history_window.grid_rowconfigure(1, weight=1)  
+        list_frame.grid_columnconfigure(0, weight=1)
+        list_frame.grid_rowconfigure(0, weight=1)       
+
+
+    def refresh_history_record_list(self, listbox):
+        history_previews = get_history_record_previews()
+
+        listbox.delete(0, tk.END) 
+
+        if not history_previews:
+            listbox.insert(tk.END, "没有历史跑步记录") 
+            listbox.itemconfig(tk.END, fg="grey") 
             return
-        if not history_previews: # 再次检查 history_previews 是否为空，防止在其他操作后出现问题
-            messagebox.showinfo("提示", "没有可删除的历史记录。")
-            return
-        indices_to_delete = sorted([int(index) for index in selected_indices], reverse=True) # 从大到小排序，逆序删除
-        for index in indices_to_delete:
-            if 0 <= index < len(history_previews): # 再次检查索引是否有效
-                selected_record_preview = history_previews[index]
-                filename = selected_record_preview['filename']
-                filepath = os.path.join("data", filename) # 使用 os.path.join 确保路径正确
-                confirm_delete = messagebox.askyesno("确认删除", f"确定要删除记录: {filename} 吗?")
-                if confirm_delete:
-                    try:
-                        os.remove(filepath) # 删除文件
-                        listbox.delete(index) # 从 Listbox 中删除
-                        history_previews.pop(index) # 从 history_previews 列表中删除
-                        messagebox.showinfo("成功", f"记录 {filename} 删除成功。")
-                    except FileNotFoundError:
-                        messagebox.showerror("错误", f"文件 {filename} 未找到，删除失败。")
-                    except Exception as e:
-                        messagebox.showerror("错误", f"删除文件 {filename} 失败: {e}")
-            else:
-                messagebox.showerror("错误", f"选择的索引 {index} 无效，删除失败。")
+
+        for index, preview in enumerate(history_previews): 
+            display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}"
+            listbox.insert(tk.END, display_text)
+            listbox.itemconfig(tk.END, fg="blue")
+            listbox.itemconfig(tk.END, foreground="blue") 
 
 
     def show_history_detail(self, history_previews, selection_indices):
@@ -398,15 +401,22 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 detail_window.title(f"历史记录详情 - {filename}")
 
                 try:
-                    detail_window.iconbitmap("icon/history_record.ico") 
+                    detail_window.iconbitmap("icon/history_record.ico")
                 except tk.TclError as e:
                     print(f"加载历史记录详情窗口图标失败: {e}")
 
+                delete_detail_button = tk.Button(detail_window, text="删除此记录",
+                                                 command=lambda current_filename=filename, current_preview=selected_record_preview, current_detail_window=detail_window, current_index=selected_index:
+                                                 self.delete_single_history_record_from_detail(current_filename, current_preview, current_detail_window, current_index, history_previews))
+                delete_detail_button.grid(row=0, column=1, sticky='ne', padx=10, pady=10) 
 
-                tk.Label(detail_window, text=f"日期时间: {selected_record_preview['datetime']}").pack(anchor="w")
-                tk.Label(detail_window, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
-                tk.Label(detail_window, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
-                tk.Label(detail_window, text=f"年龄: {selected_record_preview['age']}").pack(anchor="w")
+                info_frame = tk.Frame(detail_window)
+                info_frame.grid(row=0, column=0, sticky='nw') 
+
+                tk.Label(info_frame, text=f"日期时间: {selected_record_preview['datetime']}").pack(anchor="w")
+                tk.Label(info_frame, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
+                tk.Label(info_frame, text=f"圈程距离: {selected_record_preview['lap_distance']} 米").pack(anchor="w")
+                tk.Label(info_frame, text=f"年龄: {selected_record_preview['age']}").pack(anchor="w")
 
                 duration_seconds_str = selected_record_preview.get('duration_seconds', '0')
                 exercise_distance_str = selected_record_preview.get('exercise_distance', '0')
@@ -424,9 +434,9 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 seconds = duration_seconds % 60
                 formatted_duration = f"{minutes:02d}:{seconds:02d}"
 
-                tk.Label(detail_window, text=f"运动时长: {formatted_duration}").pack(anchor="w")
-                tk.Label(detail_window, text=f"运动距离: {exercise_distance:.2f} 米").pack(anchor="w")
-                tk.Label(detail_window, text=f"平均心率: {average_heart_rate:.1f} bpm").pack(anchor="w")
+                tk.Label(info_frame, text=f"运动时长: {formatted_duration}").pack(anchor="w")
+                tk.Label(info_frame, text=f"运动距离: {exercise_distance:.2f} 米").pack(anchor="w")
+                tk.Label(info_frame, text=f"平均心率: {average_heart_rate:.1f} bpm").pack(anchor="w")
 
 
                 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -456,14 +466,14 @@ class TreadmillApp(tk.Tk, HeartRateListener):
 
                 canvas = FigureCanvasTkAgg(fig, master=detail_window)
                 canvas_widget = canvas.get_tk_widget()
-                canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
-                canvas.draw()
+                canvas_widget.grid(row=1, column=0, columnspan=2, sticky='ewns', padx=10, pady=10) 
 
                 feedback_frame = tk.Frame(detail_window)
-                feedback_frame.pack(pady=10)
+                feedback_frame.grid(row=2, column=0, columnspan=2, pady=10) 
 
                 feedback_labels = ["过于轻松", "舒适", "一般", "难受", "难以承受"]
                 self.recommendation_label = tk.Label(detail_window, text="", pady=10)
+
 
                 def record_feedback(feedback_value, current_filename=filename, current_preview=selected_record_preview):
                     self.record_feedbacks[current_filename] = feedback_value
@@ -492,21 +502,20 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                     except Exception as e:
                         messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
                         self.ai_analysis_text = tk.Text(detail_window, height=5, width=60, wrap=tk.WORD)
-                        self.ai_analysis_text.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+                        self.ai_analysis_text.grid(row=3, column=0, columnspan=2, pady=10, padx=10, sticky='ewns') 
                         self.ai_analysis_text.insert(tk.END, "OpenAI API 初始化失败，无法进行AI分析。请检查 API Key 和网络连接。\n")
                         self.ai_analysis_text.config(state=tk.DISABLED)
                         return
 
                 self.ai_analysis_text = tk.Text(detail_window, height=10, width=60, wrap=tk.WORD)
-                self.ai_analysis_text.pack(pady=10, padx=10, fill=tk.BOTH, expand=True,after=self.recommendation_label)
+                self.ai_analysis_text.grid(row=3, column=0, columnspan=2, pady=10, padx=10, sticky='ewns') 
                 self.ai_analysis_text.insert(tk.END, "正在分析中，请稍候...\n")
                 self.ai_analysis_text.config(state=tk.DISABLED)
 
 
                 csv_data_string = ""
                 for row in exercise_data:
-                    csv_data_string += ",".join(map(str, row)) + "\n" 
-
+                    csv_data_string += ",".join(map(str, row)) + "\n"
 
                 prompt_content = f"""
 这是一份太极式健身跑的心率记录，请分析用户的运动心率数据，数据以 CSV 格式提供，包含时间戳 (秒) 和心率值 (bpm) 两列。
@@ -537,8 +546,8 @@ CSV 格式的心率数据:
 
                 def call_openai_api(prompt):
                     try:
-                        response = self.openai_client.chat.completions.create( 
-                            model=self.app_settings.get("model", "Qwen/Qwen2.5-7B-Instruct"), 
+                        response = self.openai_client.chat.completions.create(
+                            model=self.app_settings.get("model", "Qwen/Qwen2.5-7B-Instruct"),
                             messages=[{'role': 'user', 'content': prompt}],
                             stream=False
                         )
@@ -567,6 +576,22 @@ CSV 格式的心率数据:
                     detail_window.destroy()
                 detail_window.protocol("WM_DELETE_WINDOW", on_detail_window_close)
 
+
+    def delete_single_history_record_from_detail(self, filename, selected_record_preview, detail_window, selected_index, history_previews):
+        filepath = os.path.join("data", filename)
+
+        confirm_delete = messagebox.askyesno("确认删除", f"确定要删除记录: {filename} 吗?")
+        if confirm_delete:
+            try:
+                os.remove(filepath)
+                history_previews.pop(selected_index)
+                messagebox.showinfo("成功", f"记录 {filename} 删除成功。")
+                detail_window.destroy()
+
+            except FileNotFoundError:
+                messagebox.showerror("错误", f"文件 {filename} 未找到，删除失败。")
+            except Exception as e:
+                messagebox.showerror("错误", f"删除文件 {filename} 失败: {e}")
 
     def open_settings_window(self):
         default_lap_distance = self.app_settings.get("default_lap_distance", 200) 
