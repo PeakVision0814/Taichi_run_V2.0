@@ -35,7 +35,8 @@ This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for 
 import tkinter as tk
 import time
 import json
-import os 
+import os
+import threading
 import matplotlib.pyplot as plt
 from tkinter import ttk, messagebox
 from core.heart_rate_collector import HeartRateCollector, HeartRateListener
@@ -45,7 +46,7 @@ from core.treadmill_controller import TreadmillController
 from core.exercise_data_manager import get_history_record_previews, load_exercise_data
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import OpenAI
-import threading
+
 from ui_elements.settings_window import SettingsWindow
 
 
@@ -160,7 +161,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         self.post_exercise_average_rate_label = tk.Label(self, text="等待运动停止...")
         self.post_exercise_average_rate_label.grid(row=14, column=1, padx=10, pady=5)
 
-        open_ui_button = tk.Button(self, text="打开心率模拟器", command=self.open_heart_rate_ui)
+        open_ui_button = tk.Button(self, text="开启心率测量", command=self.open_heart_rate_ui)
         open_ui_button.grid(row=15, column=0, columnspan=1, pady=10)
 
         history_button = tk.Button(self, text="历史跑步记录", command=self.open_history_record)
@@ -327,7 +328,6 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         history_window = tk.Toplevel(self)
         history_window.title("历史跑步记录")
 
-        # [修改 27.1] 设置历史记录窗口图标
         try:
             history_window.iconbitmap("icon/history_record.ico")
         except tk.TclError as e:
@@ -339,15 +339,50 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             tk.Label(history_window, text="没有历史跑步记录").pack(padx=20, pady=20)
             return
 
-        listbox = tk.Listbox(history_window, width=80)
+        # listbox = tk.Listbox(history_window, width=80)
+        listbox = tk.Listbox(history_window, width=80, selectmode=tk.MULTIPLE) # 允许选择多个
         listbox.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        for preview in history_previews:
+        # for preview in history_previews:
+        for index, preview in enumerate(history_previews): # 添加索引
             display_text = f"{preview['datetime']} - Level: {preview['level']}, 距离: {preview['lap_distance']}m, 年龄: {preview['age']}"
             listbox.insert(tk.END, display_text)
             listbox.itemconfig(tk.END, fg="blue")
+            listbox.itemconfig(tk.END, foreground="blue") # 确保颜色设置正确
 
         listbox.bind("<Double-Button-1>", lambda event: self.show_history_detail(history_previews, listbox.curselection()))
+        # 新增删除按钮
+        delete_button = tk.Button(history_window, text="删除记录", command=lambda: self.delete_history_record(history_previews, listbox))
+        delete_button.pack(pady=10)
+
+    def delete_history_record(self, history_previews, listbox):
+        selected_indices = listbox.curselection() # 获取所有选中的索引
+        if not selected_indices:
+            messagebox.showinfo("提示", "请选择要删除的历史记录。")
+            return
+        if not history_previews: # 再次检查 history_previews 是否为空，防止在其他操作后出现问题
+            messagebox.showinfo("提示", "没有可删除的历史记录。")
+            return
+        indices_to_delete = sorted([int(index) for index in selected_indices], reverse=True) # 从大到小排序，逆序删除
+        for index in indices_to_delete:
+            if 0 <= index < len(history_previews): # 再次检查索引是否有效
+                selected_record_preview = history_previews[index]
+                filename = selected_record_preview['filename']
+                filepath = os.path.join("data", filename) # 使用 os.path.join 确保路径正确
+                confirm_delete = messagebox.askyesno("确认删除", f"确定要删除记录: {filename} 吗?")
+                if confirm_delete:
+                    try:
+                        os.remove(filepath) # 删除文件
+                        listbox.delete(index) # 从 Listbox 中删除
+                        history_previews.pop(index) # 从 history_previews 列表中删除
+                        messagebox.showinfo("成功", f"记录 {filename} 删除成功。")
+                    except FileNotFoundError:
+                        messagebox.showerror("错误", f"文件 {filename} 未找到，删除失败。")
+                    except Exception as e:
+                        messagebox.showerror("错误", f"删除文件 {filename} 失败: {e}")
+            else:
+                messagebox.showerror("错误", f"选择的索引 {index} 无效，删除失败。")
+
 
     def show_history_detail(self, history_previews, selection_indices):
         if not selection_indices:
