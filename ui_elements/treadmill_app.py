@@ -370,6 +370,29 @@ class TreadmillApp(tk.Tk, HeartRateListener):
         list_frame.grid_rowconfigure(0, weight=1)       
 
 
+    def delete_history_record(self, history_previews, listbox): #  定义 delete_history_record 方法
+        selection_indices = listbox.curselection()
+        if not selection_indices:
+            messagebox.showinfo("提示", "请选择要删除的记录。")
+            return
+        selected_index = int(selection_indices[0])
+        if 0 <= selected_index < len(history_previews):
+            selected_record_preview = history_previews[selected_index]
+            filename = selected_record_preview['filename']
+            filepath = os.path.join("data", filename)
+            confirm_delete = messagebox.askyesno("确认删除", f"确定要删除记录: {filename} 吗?")
+            if confirm_delete:
+                try:
+                    os.remove(filepath)
+                    history_previews.pop(selected_index) #  从列表中移除
+                    self.refresh_history_record_list(listbox) # 刷新 listbox
+                    messagebox.showinfo("成功", f"记录 {filename} 删除成功。")
+                except FileNotFoundError:
+                    messagebox.showerror("错误", f"文件 {filename} 未找到，删除失败。")
+                except Exception as e:
+                    messagebox.showerror("错误", f"删除文件 {filename} 失败: {e}")
+
+
     def refresh_history_record_list(self, listbox):
         history_previews = get_history_record_previews()
 
