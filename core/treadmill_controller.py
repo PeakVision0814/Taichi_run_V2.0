@@ -252,9 +252,9 @@ class TreadmillController:
     def _exercise_completed(self, reason = None):
         level = self._get_selected_level()
         if reason == "heart_rate_stop":
-            message = f"本次等级{level}运动结束，第{self.laps_completed}圈时心率略高，请注意下次调整等级"
+            message = f"本次等级{level}运动结束，运动距离{self.total_distance_meters:.2f}米，因心率超过阈值停止，共完成{self.laps_completed}圈，平均心率{self.heart_rate_collector.get_average_heart_rate():.1f}bpm，最高心率{max(self.heart_rate_collector.get_all_heart_rates())}bpm。\n\n心率过高，建议适当减少运动强度喔。"
         elif level:
-            message = f"等级{level}运动已完成！"
+            message = f"等级{level}运动已完成，运动距离{self.total_distance_meters:.2f}米，共完成{self.laps_completed}圈，平均心率{self.heart_rate_collector.get_average_heart_rate():.1f}bpm，最高心率{max(self.heart_rate_collector.get_all_heart_rates())}bpm。\n\n运动强度达标，状态良好，继续保持！！"
         else:
             message = "运动结束！"
 
