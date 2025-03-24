@@ -28,10 +28,11 @@ All rights reserved.
 This software is released under the GNU GENERAL PUBLIC LICENSE, see LICENSE for more information.
 """
 import time
+import tkinter as tk
 import threading
 from tkinter import messagebox
 import datetime
-from core.exercise_data_manager import save_exercise_data
+from core.exercise_data_manager import save_exercise_data, update_exercise_data_feedback
 from core.speed_config import SPEED_LEVELS, get_speed_levels
 
 class TreadmillController:
@@ -76,6 +77,7 @@ class TreadmillController:
         self.post_exercise_collection_active = False
         self.exercise_start_time = None
         self.total_distance_meters = 0.0
+        self.current_filename = None # 初始化 current_filename
 
 
     def start_exercise(self):
@@ -127,6 +129,9 @@ class TreadmillController:
         self.post_exercise_collection_active = False
         self.exercise_start_time = datetime.datetime.now()
         self.total_distance_meters = 0.0 
+
+        timestamp_str = self.exercise_start_time.strftime("%Y%m%d-%H%M%S")
+        self.current_filename = f"heart_rate_log_{timestamp_str}.csv" # 生成并保存文件名
 
         self.simulator.distance_covered = 0.0
         initial_speed = self.speed_levels[0]
@@ -258,10 +263,43 @@ class TreadmillController:
         else:
             message = "运动结束！"
 
-        messagebox.showinfo("完成运动", message)
+        completion_window = tk.Toplevel()
+        completion_window.title("完成运动")
+
+        message_label = tk.Label(completion_window, text=message, padx=20, pady=10)
+        message_label.pack()
+
+        feedback_frame = tk.Frame(completion_window)
+        feedback_frame.pack(pady=10)
+
+        feedback_labels = ["过于轻松", "舒适", "一般", "难受", "难以承受"]
+
+        def record_feedback(feedback_value):
+            if self.current_filename:
+                update_exercise_data_feedback(self.current_filename, feedback_value) 
+                print(f"反馈 '{feedback_value}' 已保存到文件: {self.current_filename}")
+            else:
+                print("错误: 无法获取当前文件名，反馈未保存。")
+            completion_window.destroy()
+
+        for i, label_text in enumerate(feedback_labels):
+            btn = tk.Button(feedback_frame, text=label_text, command=lambda text=label_text: record_feedback(text)) 
+            btn.pack(side=tk.LEFT, padx=5)
+
+
         self.stop_exercise()
         if self.exercise_completion_callback:
             self.exercise_completion_callback()
+
+
+
+    def _close_completion_window(self, window):
+        """关闭运动完成窗口并执行停止运动后的操作"""
+        window.destroy()
+        self.stop_exercise()
+        if self.exercise_completion_callback:
+            self.exercise_completion_callback()
+
 
 
     def _schedule_ui_update(self):
