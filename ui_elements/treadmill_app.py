@@ -386,7 +386,6 @@ class TreadmillApp(tk.Tk, HeartRateListener):
             listbox.itemconfig(tk.END, fg="blue")
             listbox.itemconfig(tk.END, foreground="blue") 
 
-
     def show_history_detail(self, history_previews, selection_indices):
         if not selection_indices:
             return
@@ -408,10 +407,10 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                 delete_detail_button = tk.Button(detail_window, text="删除此记录",
                                                  command=lambda current_filename=filename, current_preview=selected_record_preview, current_detail_window=detail_window, current_index=selected_index:
                                                  self.delete_single_history_record_from_detail(current_filename, current_preview, current_detail_window, current_index, history_previews))
-                delete_detail_button.grid(row=0, column=1, sticky='ne', padx=10, pady=10) 
+                delete_detail_button.grid(row=0, column=1, sticky='ne', padx=10, pady=10)
 
                 info_frame = tk.Frame(detail_window)
-                info_frame.grid(row=0, column=0, sticky='nw') 
+                info_frame.grid(row=0, column=0, sticky='nw')
 
                 tk.Label(info_frame, text=f"日期时间: {selected_record_preview['datetime']}").pack(anchor="w")
                 tk.Label(info_frame, text=f"等级: {selected_record_preview['level']}").pack(anchor="w")
@@ -466,14 +465,14 @@ class TreadmillApp(tk.Tk, HeartRateListener):
 
                 canvas = FigureCanvasTkAgg(fig, master=detail_window)
                 canvas_widget = canvas.get_tk_widget()
-                canvas_widget.grid(row=1, column=0, columnspan=2, sticky='ewns', padx=10, pady=10) 
+                canvas_widget.grid(row=1, column=0, columnspan=2, sticky='ewns', padx=10, pady=10)
 
                 feedback_frame = tk.Frame(detail_window)
-                feedback_frame.grid(row=2, column=0, columnspan=2, pady=10) 
+                feedback_frame.grid(row=2, column=0, columnspan=2, pady=10)
 
                 feedback_labels = ["过于轻松", "舒适", "一般", "难受", "难以承受"]
                 self.recommendation_label = tk.Label(detail_window, text="", pady=10)
-
+                self.recommendation_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="ew") 
 
                 def record_feedback(feedback_value, current_filename=filename, current_preview=selected_record_preview):
                     self.record_feedbacks[current_filename] = feedback_value
@@ -484,7 +483,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                     btn = tk.Button(feedback_frame, text=label_text, command=lambda text=label_text: record_feedback(text))
                     btn.pack(side=tk.LEFT, padx=5)
                     if i == 2:
-                        self.recommendation_label.pack(padx=10)
+                        pass 
 
 
                 def update_recommendation_text(feedback_value):
@@ -502,13 +501,13 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                     except Exception as e:
                         messagebox.showerror("API 初始化错误", f"OpenAI API 初始化失败: {e}")
                         self.ai_analysis_text = tk.Text(detail_window, height=5, width=60, wrap=tk.WORD)
-                        self.ai_analysis_text.grid(row=3, column=0, columnspan=2, pady=10, padx=10, sticky='ewns') 
+                        self.ai_analysis_text.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky='ewns')
                         self.ai_analysis_text.insert(tk.END, "OpenAI API 初始化失败，无法进行AI分析。请检查 API Key 和网络连接。\n")
                         self.ai_analysis_text.config(state=tk.DISABLED)
                         return
 
                 self.ai_analysis_text = tk.Text(detail_window, height=10, width=60, wrap=tk.WORD)
-                self.ai_analysis_text.grid(row=3, column=0, columnspan=2, pady=10, padx=10, sticky='ewns') 
+                self.ai_analysis_text.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky='ewns')
                 self.ai_analysis_text.insert(tk.END, "正在分析中，请稍候...\n")
                 self.ai_analysis_text.config(state=tk.DISABLED)
 
@@ -592,6 +591,7 @@ CSV 格式的心率数据:
                 messagebox.showerror("错误", f"文件 {filename} 未找到，删除失败。")
             except Exception as e:
                 messagebox.showerror("错误", f"删除文件 {filename} 失败: {e}")
+
 
     def open_settings_window(self):
         default_lap_distance = self.app_settings.get("default_lap_distance", 200) 
