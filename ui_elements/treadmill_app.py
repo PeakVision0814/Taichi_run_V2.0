@@ -43,7 +43,7 @@ from core.heart_rate_collector import HeartRateCollector, HeartRateListener
 from ui_elements.heart_rate_ui import HeartRateUI
 from simulator.treadmill_simulator import TreadmillSimulator
 from core.treadmill_controller import TreadmillController
-from core.exercise_data_manager import get_history_record_previews, load_exercise_data
+from core.exercise_data_manager import get_history_record_previews, load_exercise_data, update_exercise_data_feedback
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from openai import OpenAI
 
@@ -478,6 +478,7 @@ class TreadmillApp(tk.Tk, HeartRateListener):
                     self.record_feedbacks[current_filename] = feedback_value
                     current_preview['feedback'] = feedback_value
                     update_recommendation_text(feedback_value)
+                    update_exercise_data_feedback(current_filename, feedback_value)
 
                 for i, label_text in enumerate(feedback_labels):
                     btn = tk.Button(feedback_frame, text=label_text, command=lambda text=label_text: record_feedback(text))

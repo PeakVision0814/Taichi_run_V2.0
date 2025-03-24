@@ -20,20 +20,19 @@ import datetime
 
 DATA_FOLDER = "data"
 
-def save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, laps_completed, exercise_distance): 
-
+def save_exercise_data(filename, session_data, level, lap_distance, age, exercise_duration_seconds, laps_completed, exercise_distance, feedback=""):
     if not os.path.exists(DATA_FOLDER):
         os.makedirs(DATA_FOLDER)
     filepath = os.path.join(DATA_FOLDER, filename)
     try:
-        with open(filepath, 'w', newline='') as csvfile:
+        with open(filepath, 'w', newline='', encoding='utf-8') as csvfile: 
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(["Second", "HeartRate", "Level", "LapDistance", "Age", "Duration(seconds)", "Laps", "Distance(meters)"])
+            csv_writer.writerow(["Second", "HeartRate", "Level", "LapDistance", "Age", "Duration(seconds)", "Laps", "Distance(meters)", "Feedback"]) 
             elapsed_seconds = 0
             for timestamp, heart_rate in session_data:
                 elapsed_seconds += 1
-                csv_writer.writerow([elapsed_seconds, heart_rate, level, lap_distance, age, exercise_duration_seconds, laps_completed, exercise_distance]) 
-        print(f"运动数据成功保存到: {filepath}")
+                csv_writer.writerow([elapsed_seconds, heart_rate, level, lap_distance, age, exercise_duration_seconds, laps_completed, exercise_distance, feedback]) 
+        # print(f"运动数据成功保存到: {filepath}")
     except Exception as e:
         print(f"保存运动数据到 CSV 文件时出错: {e}")
 
@@ -41,7 +40,7 @@ def save_exercise_data(filename, session_data, level, lap_distance, age, exercis
 def load_exercise_data(filename):
     filepath = os.path.join(DATA_FOLDER, filename)
     try:
-        with open(filepath, 'r') as csvfile:
+        with open(filepath, 'r', newline='', encoding='utf-8') as csvfile: 
             csv_reader = csv.reader(csvfile)
             header = next(csv_reader)
             data = []
@@ -66,7 +65,7 @@ def get_history_record_previews():
     for filename in filenames:
         filepath = os.path.join(DATA_FOLDER, filename)
         try:
-            with open(filepath, 'r') as csvfile:
+            with open(filepath, 'r', newline='', encoding='utf-8') as csvfile:
                 csv_reader = csv.reader(csvfile)
                 header = next(csv_reader)
                 first_data_row = next(csv_reader, None)
@@ -76,12 +75,14 @@ def get_history_record_previews():
                     age_index = header.index("Age") if "Age" in header else -1
                     duration_index = header.index("Duration(seconds)") if "Duration(seconds)" in header else -1
                     distance_index = header.index("Distance(meters)") if "Distance(meters)" in header else -1
+                    feedback_index = header.index("Feedback") if "Feedback" in header else -1
 
                     level = first_data_row[level_index] if level_index != -1 and len(first_data_row) > level_index else "N/A"
                     lap_distance = first_data_row[lap_distance_index] if lap_distance_index != -1 and len(first_data_row) > lap_distance_index else "N/A"
                     age = first_data_row[age_index] if age_index != -1 and len(first_data_row) > age_index else "N/A"
                     duration_seconds = first_data_row[duration_index] if duration_index != -1 and len(first_data_row) > duration_index else "N/A"
                     exercise_distance = first_data_row[distance_index] if distance_index != -1 and len(first_data_row) > distance_index else "N/A"
+                    feedback = first_data_row[feedback_index] if feedback_index != -1 and len(first_data_row) > feedback_index else ""
 
                     datetime_str_from_filename = filename[len("heart_rate_log_"): -len(".csv")]
                     try:
@@ -96,8 +97,9 @@ def get_history_record_previews():
                         "level": level,
                         "lap_distance": lap_distance,
                         "age": age,
-                        "duration_seconds": duration_seconds, 
-                        "exercise_distance": exercise_distance, 
+                        "duration_seconds": duration_seconds,
+                        "exercise_distance": exercise_distance,
+                        "feedback": feedback, 
                     })
         except Exception as e:
             print(f"读取文件 {filename} 预览信息时出错: {e}")
@@ -113,8 +115,46 @@ def get_history_record_previews():
     return preview_data_sorted
 
 
+def update_exercise_data_feedback(filename, feedback_text):
+
+    filepath = os.path.join(DATA_FOLDER, filename)
+    if not os.path.exists(filepath):
+        print(f"文件不存在: {filepath}")
+        return
+
+    updated_rows = []
+    try:
+        with open(filepath, 'r', newline='', encoding='utf-8') as infile: 
+            csv_reader = csv.reader(infile)
+            header = next(csv_reader) 
+            if header and "Feedback" not in header: 
+                header.append("Feedback")
+            updated_rows.append(header)
+
+            for row in csv_reader:
+                if row:
+                    while len(row) < len(header): 
+                        row.append("")
+                    if header and "Feedback" in header:
+                        feedback_index = header.index("Feedback")
+                        row[feedback_index] = feedback_text 
+                    updated_rows.append(row)
+
+    except Exception as e:
+        print(f"读取文件 {filename} 时出错: {e}")
+        return
+
+    try:
+        with open(filepath, 'w', newline='', encoding='utf-8') as outfile:
+            csv_writer = csv.writer(outfile)
+            csv_writer.writerows(updated_rows) 
+        # print(f"文件 {filename} 的反馈信息已更新为: {feedback_text}")
+    except Exception as e:
+        print(f"写入文件 {filename} 时出错: {e}")
+
+
 if __name__ == '__main__':
-    test_filename = "heart_rate_log_test.csv"
+    test_filename = "heart_rate_log_test_feedback.csv"
     test_session_data = [
         (time.time(), 70),
         (time.time() + 1, 72),
@@ -126,8 +166,9 @@ if __name__ == '__main__':
     test_duration = 600
     test_laps = 3
     test_exercise_distance = 1500
+    test_feedback = "舒适"
 
-    save_exercise_data(test_filename, test_session_data, test_level, test_lap_distance, test_age, test_duration, test_laps, test_exercise_distance)
+    save_exercise_data(test_filename, test_session_data, test_level, test_lap_distance, test_age, test_duration, test_laps, test_exercise_distance, test_feedback) 
 
     loaded_data = load_exercise_data(test_filename)
     if loaded_data:
@@ -140,3 +181,6 @@ if __name__ == '__main__':
         print("\n历史记录预览信息:")
         for preview in preview_info:
             print(preview)
+
+    update_feedback_filename = "heart_rate_log_20240101-120000.csv" 
+    update_exercise_data_feedback(update_feedback_filename, "感觉良好")
